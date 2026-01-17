@@ -1,0 +1,29 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import emailRoutes from "./routers/email-router";
+import { db } from "./config/db";
+import passport from "./config/passport";
+import authRoutes from "./routers/login-router";
+import "./config/worker";
+
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.use(passport.initialize());
+
+app.get("/", async (_req, res) => {
+  const { rows } = await db.query("SELECT 'API running' AS msg");
+  res.json(rows);
+});
+
+app.use(emailRoutes);
+app.use("/auth", authRoutes);
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
