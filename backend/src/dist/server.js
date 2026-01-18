@@ -43,7 +43,6 @@ var email_router_1 = require("./routers/email-router");
 var db_1 = require("./config/db");
 var passport_1 = require("./config/passport");
 var login_router_1 = require("./routers/login-router");
-var worker_1 = require("./config/worker");
 dotenv_1["default"].config();
 var app = express_1["default"]();
 app.use(cors_1["default"]({
@@ -72,5 +71,4 @@ app.use("/auth", login_router_1["default"]);
 var PORT = process.env.PORT || 4000;
 app.listen(PORT, function () {
     console.log("Server running on port " + PORT);
-    worker_1.startWorker();
 });

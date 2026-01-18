@@ -34,7 +34,7 @@ export default function Tabs({ activeTab, search }: TabsProps) {
 
       try {
         const res = await axios.get(
-          `https://emaillscheduler2.onrender.com/emails/${activeTab}`,
+          `https://emaillscheduler2.onrender.com/${activeTab}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
