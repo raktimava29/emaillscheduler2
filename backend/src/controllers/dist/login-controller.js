@@ -50,7 +50,7 @@ exports.googleCallbackController = function (req, res) {
     var token = jsonwebtoken_1["default"].sign({
         userId: user.id,
         email: user.email
-    }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    }, process.env.JWT_SECRET, { expiresIn: "1h" });
     return res.redirect("https://emaillscheduler2.vercel.app/auth/callback?token=" + token);
 };
 /**

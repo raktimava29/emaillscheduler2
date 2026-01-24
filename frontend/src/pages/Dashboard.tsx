@@ -95,7 +95,7 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r p-4 flex flex-col">
-        <h1 className="text-2xl font-bold mb-6">ONG</h1>
+        <h1 className="text-2xl font-bold mb-6">ChronoMail</h1>
 
         <div className="flex items-center gap-3 mb-6 rounded-lg bg-gray-50 p-3">
           <img

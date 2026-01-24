@@ -19,7 +19,7 @@ export const googleCallbackController = (req: Request, res: Response) => {
       email: user.email,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "1h" }
   );
 
   return res.redirect(
