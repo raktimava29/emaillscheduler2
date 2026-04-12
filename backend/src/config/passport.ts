@@ -27,7 +27,6 @@ passport.use(
         const name = profile.displayName;
         const avatar = profile.photos?.[0]?.value;
 
-        // 1️⃣ Check existing user
         const { rows } = await db.query(
           "SELECT * FROM users WHERE google_id = $1",
           [googleId]

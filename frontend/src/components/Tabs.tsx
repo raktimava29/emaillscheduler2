@@ -105,7 +105,6 @@ export default function Tabs({ activeTab, search }: TabsProps) {
               </p>
 
               <div className="flex items-center gap-3 text-sm">
-                {/* Status badge */}
                 {activeTab === "scheduled" ? (
                   <span className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-600">
                     ⏰ {time ? new Date(time).toLocaleString() : ""}

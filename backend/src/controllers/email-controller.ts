@@ -25,7 +25,7 @@ export async function scheduleEmails(req: Request, res: Response) {
     const userId = (req as any).user.userId;
     const batchId = randomUUID();
 
-    // 1️⃣ Create batch
+    //Create batch
     await db.query(
       `
       INSERT INTO email_batches
@@ -46,7 +46,7 @@ export async function scheduleEmails(req: Request, res: Response) {
       ]
     );
 
-    // 2️⃣ Create jobs + schedule BullMQ
+    //Create jobs and schedule BullMQ
     for (let i = 0; i < recipients.length; i++) {
       const jobId = randomUUID();
 

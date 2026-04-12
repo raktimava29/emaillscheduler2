@@ -56,7 +56,7 @@ function scheduleEmails(req, res) {
                     }
                     userId = req.user.userId;
                     batchId = crypto_1.randomUUID();
-                    // 1️⃣ Create batch
+                    //Create batch
                     return [4 /*yield*/, db_1.db.query("\n      INSERT INTO email_batches\n      (id, user_id, sender_email, subject, body, start_time,\n       delay_between_emails_seconds, hourly_limit, total_emails)\n      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\n      ", [
                             batchId,
                             userId,
@@ -69,7 +69,7 @@ function scheduleEmails(req, res) {
                             recipients.length,
                         ])];
                 case 1:
-                    // 1️⃣ Create batch
+                    //Create batch
                     _c.sent();
                     i = 0;
                     _c.label = 2;

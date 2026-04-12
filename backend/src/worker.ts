@@ -3,5 +3,5 @@ import { startWorker } from "./config/worker";
 
 dotenv.config();
 
-console.log("🟢 Starting email worker...");
+console.log("Starting email worker...");
 startWorker();

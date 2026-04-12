@@ -68,8 +68,8 @@ export default function Compose() {
 
       alert(
         scheduledTime
-          ? "Emails scheduled successfully ✅"
-          : "Emails sent successfully ✅"
+          ? "Emails scheduled successfully"
+          : "Emails sent successfully"
       );
 
       navigate("/dashboard");
@@ -84,7 +84,6 @@ export default function Compose() {
   return (
     <div className="flex h-screen bg-white">
       <div className="flex flex-1 flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-3">
             <button
@@ -124,7 +123,6 @@ export default function Compose() {
           </div>
         </div>
 
-        {/* Form */}
         <div className="flex flex-1 gap-8 p-8">
           <div className="flex flex-1 flex-col gap-5">
             <div className="flex gap-4">
@@ -162,7 +160,6 @@ export default function Compose() {
             />
           </div>
 
-          {/* Scheduler */}
           {showScheduler && (
             <div className="w-80 rounded-xl border bg-white p-5 shadow-lg">
               <h3 className="mb-4 text-lg font-semibold">Send Later</h3>

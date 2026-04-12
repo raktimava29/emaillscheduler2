@@ -89,7 +89,7 @@ export function startWorker() {
         text: "Hello from Email Scheduler",
       });
 
-      console.log("✅ Sent:", nodemailer.getTestMessageUrl(info));
+      console.log("Sent:", nodemailer.getTestMessageUrl(info));
 
       await db.query(
         "UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1",
@@ -103,8 +103,8 @@ export function startWorker() {
   );
 
   worker.on("failed", (job, err) => {
-    console.error("❌ Job failed:", job?.id, err.message);
+    console.error("Job failed:", job?.id, err.message);
   });
 
-  console.log("🚀 Worker started");
+  console.log("Worker started");
 }

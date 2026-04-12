@@ -8,7 +8,6 @@ export default function MailHeader({ name, email }: MailHeaderProps) {
 
   return (
     <div className="flex items-start gap-4 py-4">
-      {/* Avatar */}
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-lg font-semibold text-white">
         {firstLetter}
       </div>

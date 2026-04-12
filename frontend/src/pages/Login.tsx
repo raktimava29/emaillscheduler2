@@ -15,7 +15,6 @@ export default function Login() {
           onClick={loginWithGoogle}
           className="mb-4 flex w-full items-center justify-center gap-3 rounded-md bg-green-50 py-3 text-sm font-medium text-gray-700 transition hover:bg-green-100"
         >
-          {/* Google SVG Icon */}
           <svg className="h-5 w-5" viewBox="0 0 48 48">
             <path
               fill="#EA4335"
