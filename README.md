@@ -102,7 +102,7 @@ JWT_SECRET=your_jwt_secret
 
 ---
 
-## 🧠 System Design
+## 🧠 System Architecture
 
 Chronomail follows a **producer-consumer architecture**:
 
@@ -111,3 +111,12 @@ Chronomail follows a **producer-consumer architecture**:
 * Failed jobs are retried automatically for reliability
 
 ---
+
+## 📸 Screenshots
+
+###  Sent Mails
+![](./frontend/src/assets/Screenshot 2026-04-12 133938.png)
+
+### Schedule Mails
+![](./frontend/src/assets/Screenshot 2026-04-12 134049.png)
+
