@@ -115,8 +115,8 @@ Chronomail follows a **producer-consumer architecture**:
 ## 📸 Screenshots
 
 ###  Sent Mails
-![](./frontend/src/assets/Screenshot 2026-04-12 133938.png)
+![](./frontend/src/assets/Screenshot%202026-04-12%20133938.png)
 
 ### Schedule Mails
-![](./frontend/src/assets/Screenshot 2026-04-12 134049.png)
+![](./frontend/src/assets/Screenshot%202026-04-12%20134049.png)
 
