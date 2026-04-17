@@ -36,9 +36,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.getMe = exports.googleCallbackController = void 0;
+exports.getMe = exports.login = exports.register = exports.googleCallbackController = void 0;
 var jsonwebtoken_1 = require("jsonwebtoken");
+var bcryptjs_1 = require("bcryptjs");
 var db_1 = require("../config/db");
+var crypto_1 = require("crypto");
+var dotenv_1 = require("dotenv");
+dotenv_1["default"].config();
+var frontend = process.env.FRONTEND_URL;
 exports.googleCallbackController = function (req, res) {
     var user = req.user;
     if (!user) {
@@ -51,8 +56,97 @@ exports.googleCallbackController = function (req, res) {
         userId: user.id,
         email: user.email
     }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    return res.redirect("https://emaillscheduler2.vercel.app/auth/callback?token=" + token);
+    console.log(frontend);
+    return res.redirect(frontend + "/auth/callback?token=" + token);
 };
+/**
+ * REGISTER (Non-Gmail)
+ */
+function register(req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, email, password, rows, hashedPassword, id, name, err_1;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 4, , 5]);
+                    _a = req.body, email = _a.email, password = _a.password;
+                    if (!email || !password) {
+                        return [2 /*return*/, res.status(400).json({ error: "Missing fields" })];
+                    }
+                    return [4 /*yield*/, db_1.db.query("SELECT * FROM users WHERE email = $1", [email])];
+                case 1:
+                    rows = (_b.sent()).rows;
+                    if (rows.length > 0) {
+                        return [2 /*return*/, res.status(400).json({ error: "User already exists" })];
+                    }
+                    return [4 /*yield*/, bcryptjs_1["default"].hash(password, 10)];
+                case 2:
+                    hashedPassword = _b.sent();
+                    id = crypto_1.randomUUID();
+                    name = email.split("@")[0];
+                    return [4 /*yield*/, db_1.db.query("\n      INSERT INTO users (id, name, email, password)\n      VALUES ($1, $2, $3, $4)\n      ", [id, name, email, hashedPassword])];
+                case 3:
+                    _b.sent();
+                    res.json({ message: "User registered" });
+                    return [3 /*break*/, 5];
+                case 4:
+                    err_1 = _b.sent();
+                    console.error("Register error:", err_1);
+                    res.status(500).json({ error: "Registration failed" });
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.register = register;
+/**
+ * LOGIN (email + password)
+ */
+function login(req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var _a, email, password, rows, user, isMatch, token, err_2;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 3, , 4]);
+                    _a = req.body, email = _a.email, password = _a.password;
+                    return [4 /*yield*/, db_1.db.query("SELECT * FROM users WHERE email = $1", [email])];
+                case 1:
+                    rows = (_b.sent()).rows;
+                    if (rows.length === 0) {
+                        return [2 /*return*/, res.status(401).json({ error: "Invalid credentials" })];
+                    }
+                    user = rows[0];
+                    // Gmail Users
+                    if (!user.password) {
+                        return [2 /*return*/, res.status(400).json({
+                                error: "Use Google login for this account"
+                            })];
+                    }
+                    return [4 /*yield*/, bcryptjs_1["default"].compare(password, user.password)];
+                case 2:
+                    isMatch = _b.sent();
+                    if (!isMatch) {
+                        return [2 /*return*/, res.status(401).json({ error: "Invalid credentials" })];
+                    }
+                    token = jsonwebtoken_1["default"].sign({
+                        userId: user.id,
+                        email: user.email
+                    }, process.env.JWT_SECRET, { expiresIn: "1h" });
+                    res.json({ token: token });
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_2 = _b.sent();
+                    console.error("Login error:", err_2);
+                    res.status(500).json({ error: "Login failed" });
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.login = login;
 /**
  * GET /auth/me
  */

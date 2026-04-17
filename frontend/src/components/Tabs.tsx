@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiFetch } from "../lib/api";
 
 interface Email {
   id: string;
@@ -33,25 +33,10 @@ export default function Tabs({ activeTab, search }: TabsProps) {
       setLoading(true);
 
       try {
-        const res = await axios.get(
-          `https://emaillscheduler2.onrender.com/emails/${activeTab}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setEmails(res.data);
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          if (err.response?.status === 401) {
-            localStorage.removeItem("token");
-            navigate("/");
-          }
-        } else {
-          console.error("Unexpected error", err);
-        }
+        const data = await apiFetch(`/emails/${activeTab}`)
+        setEmails(data);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }

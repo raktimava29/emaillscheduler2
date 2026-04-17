@@ -28,8 +28,8 @@ passport.use(
         const avatar = profile.photos?.[0]?.value;
 
         const { rows } = await db.query(
-          "SELECT * FROM users WHERE google_id = $1",
-          [googleId]
+          "SELECT * FROM users WHERE google_id = $1 OR email = $2",
+          [googleId,email]
         );
 
         let user;
@@ -58,6 +58,15 @@ passport.use(
           );
         } else {
           user = rows[0];
+
+          if(!user.google_id) {
+            await db.query(
+              "UPDATE users SET google_id = $1 where id = $2",
+              [googleId,user.id]
+            );
+
+            user.google_id = googleId;
+          }
         }
 
         done(null, user);

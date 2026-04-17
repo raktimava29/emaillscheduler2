@@ -1,4 +1,4 @@
-const API_BASE = "https://emaillscheduler2.onrender.com/";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export async function apiFetch(
   path: string,
@@ -18,6 +18,11 @@ export async function apiFetch(
   if (res.status === 401) {
     localStorage.removeItem("token");
     window.location.href = "/";
+  }
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error?.error || "API error");
   }
 
   return res.json();

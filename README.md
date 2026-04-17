@@ -2,7 +2,7 @@
 
 **Chronomail** is a full-stack email scheduling platform that allows users to compose, schedule, and manage email deliveries efficiently. It uses Redis-backed job queues for asynchronous processing and ensures reliable, fault-tolerant email delivery.
 
-> 🚀 Backend Deployed at: https://emaillscheduler2.onrender.com
+> Project Deployed at: https://emaillscheduler2.vercel.app/
 
 ---
 

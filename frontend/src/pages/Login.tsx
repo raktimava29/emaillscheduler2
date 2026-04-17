@@ -1,7 +1,38 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+
 export default function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const loginWithGoogle = () => {
-    window.location.href = "https://emaillscheduler2.onrender.com/auth/google";
+    window.location.href =`${import.meta.env.VITE_API_URL}/auth/google`
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      const data = await apiFetch("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({
+            email,
+            password
+          })
+        }
+      )
+
+      localStorage.setItem("token", data.token);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+        console.error(err);
+      }
   };
 
   return (
@@ -45,21 +76,32 @@ export default function Login() {
         <input
           type="email"
           placeholder="Email ID"
+          onChange={(e) => setEmail(e.target.value)}
           className="mb-3 w-full rounded-md bg-gray-100 px-4 py-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-green-400"
         />
 
         <input
           type="password"
           placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
           className="mb-5 w-full rounded-md bg-gray-100 px-4 py-3 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-green-400"
         />
 
         <button
           className="w-full rounded-md bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
-          onClick={() => alert("Email login UI only")}
+          onClick={handleLogin}
         >
           Login
         </button>
+
+        <p className="text-sm text-gray-400 text-center mt-4">New Here?
+          <span 
+            className="cursor-pointer hover:underline mx-1"
+            onClick={() => navigate("/register")}
+          >
+            Register
+          </span>
+        </p>
       </div>
     </div>
   );

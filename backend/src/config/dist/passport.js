@@ -50,7 +50,7 @@ passport_1["default"].use(new passport_google_oauth20_1.Strategy({
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
-                _e.trys.push([0, 5, , 6]);
+                _e.trys.push([0, 6, , 7]);
                 googleId = profile.id;
                 email = (_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value;
                 if (!email) {
@@ -58,7 +58,7 @@ passport_1["default"].use(new passport_google_oauth20_1.Strategy({
                 }
                 name = profile.displayName;
                 avatar = (_d = (_c = profile.photos) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.value;
-                return [4 /*yield*/, db_1.db.query("SELECT * FROM users WHERE google_id = $1", [googleId])];
+                return [4 /*yield*/, db_1.db.query("SELECT * FROM users WHERE google_id = $1 OR email = $2", [googleId, email])];
             case 1:
                 rows = (_e.sent()).rows;
                 user = void 0;
@@ -79,18 +79,23 @@ passport_1["default"].use(new passport_google_oauth20_1.Strategy({
                     ])];
             case 2:
                 _e.sent();
-                return [3 /*break*/, 4];
+                return [3 /*break*/, 5];
             case 3:
                 user = rows[0];
-                _e.label = 4;
+                if (!!user.google_id) return [3 /*break*/, 5];
+                return [4 /*yield*/, db_1.db.query("UPDATE users SET google_id = $1 where id = $2", [googleId, user.id])];
             case 4:
-                done(null, user);
-                return [3 /*break*/, 6];
+                _e.sent();
+                user.google_id = googleId;
+                _e.label = 5;
             case 5:
+                done(null, user);
+                return [3 /*break*/, 7];
+            case 6:
                 err_1 = _e.sent();
                 done(err_1);
-                return [3 /*break*/, 6];
-            case 6: return [2 /*return*/];
+                return [3 /*break*/, 7];
+            case 7: return [2 /*return*/];
         }
     });
 }); }));

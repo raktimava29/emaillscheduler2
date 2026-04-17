@@ -18,7 +18,7 @@ async function scheduleEmails(req, res) {
         }
         const userId = req.user.userId;
         const batchId = (0, crypto_1.randomUUID)();
-        // 1️⃣ Create batch
+        //Create batch
         await db_1.db.query(`
       INSERT INTO email_batches
       (id, user_id, sender_email, subject, body, start_time,
@@ -35,7 +35,7 @@ async function scheduleEmails(req, res) {
             hourlyLimit,
             recipients.length,
         ]);
-        // 2️⃣ Create jobs + schedule BullMQ
+        //Create jobs and schedule BullMQ
         for (let i = 0; i < recipients.length; i++) {
             const jobId = (0, crypto_1.randomUUID)();
             const scheduledAt = new Date(new Date(startTime).getTime() +

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { apiFetch } from "../lib/api";
 
 interface Mail {
   id: string;
@@ -30,16 +30,8 @@ export default function MailView() {
       }
 
       try {
-        const res = await axios.get(
-          `https://emaillscheduler2.onrender.com/emails/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setMail(res.data);
+        const data = await apiFetch(`/emails/${id}`)
+        setMail(data);
       } catch (err) {
         console.error(err);
       } finally {

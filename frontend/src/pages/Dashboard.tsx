@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import Tabs from "../components/Tabs";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { apiFetch } from "../lib/api";
 
 type TabType = "scheduled" | "sent";
 
@@ -46,10 +46,8 @@ export default function Dashboard() {
 
     async function fetchProfile() {
       try {
-        const res = await axios.get("https://emaillscheduler2.onrender.com/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUserProfile(res.data);
+        const data = await apiFetch("/auth/me");
+        setUserProfile(data);
       } catch (err) {
         console.error("Failed to fetch profile", err);
       }
@@ -64,22 +62,14 @@ export default function Dashboard() {
     async function fetchCounts() {
       try {
         const [scheduledRes, sentRes] = await Promise.all([
-          axios.get("https://emaillscheduler2.onrender.com/emails/scheduled", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("https://emaillscheduler2.onrender.com/emails/sent", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          apiFetch("/emails/scheduled"),
+          apiFetch("/emails/sent")
         ]);
 
-        setScheduledCount(scheduledRes.data.length);
-        setSentCount(sentRes.data.length);
+        setScheduledCount(scheduledRes.length);
+        setSentCount(sentRes.length);
       } catch (err) {
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          localStorage.removeItem("token");
-        } else {
-          console.error("Unexpected error", err);
-        }
+        console.error("Unexpected error", err);
       }
     }
 
@@ -88,7 +78,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/");
   };
 
   return (

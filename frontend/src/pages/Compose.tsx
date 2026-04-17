@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiFetch } from "../lib/api";
 
 export default function Compose() {
   const navigate = useNavigate();
@@ -49,22 +49,17 @@ export default function Compose() {
       .filter(Boolean);
 
     try {
-      await axios.post(
-        "https://emaillscheduler2.onrender.com/emails/schedule",
-        {
+      await apiFetch("/emails/schedule", {
+        method: "POST",
+        body: JSON.stringify({
           senderEmail: "no-reply@ong.app",
           subject,
           body,
           startTime: scheduledTime ?? new Date().toISOString(),
           delayBetweenEmailsSeconds: 2,
           recipients,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        })
+      })
 
       alert(
         scheduledTime
@@ -78,8 +73,6 @@ export default function Compose() {
       console.error(err);
     }
   };
-
-  console.log("Attached file:", attachment?.name);
   
   return (
     <div className="flex h-screen bg-white">
@@ -127,7 +120,7 @@ export default function Compose() {
           <div className="flex flex-1 flex-col gap-5">
             <div className="flex gap-4">
               <span className="w-16 text-gray-500">From</span>
-              <select className="rounded bg-gray-100 px-3 py-1">
+              <select title="Sender email" className="rounded bg-gray-100 px-3 py-1">
                 <option>no-reply@ong.app</option>
               </select>
             </div>
@@ -163,8 +156,9 @@ export default function Compose() {
           {showScheduler && (
             <div className="w-80 rounded-xl border bg-white p-5 shadow-lg">
               <h3 className="mb-4 text-lg font-semibold">Send Later</h3>
-
+              
               <input
+                aria-label="time"
                 type="datetime-local"
                 className="mb-4 w-full rounded border px-3 py-2"
                 onChange={(e) =>

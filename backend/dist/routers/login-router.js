@@ -16,4 +16,6 @@ router.get("/google/callback", passport_1.default.authenticate("google", {
     failureRedirect: "/login",
 }), login_controller_1.googleCallbackController);
 router.get("/me", auth_1.requireAuth, login_controller_1.getMe);
+router.post("/login", login_controller_1.login);
+router.post("/register", login_controller_1.register);
 exports.default = router;

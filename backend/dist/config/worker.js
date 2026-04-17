@@ -64,14 +64,14 @@ function startWorker() {
             subject: "Scheduled Email",
             text: "Hello from Email Scheduler",
         });
-        console.log("✅ Sent:", nodemailer_1.default.getTestMessageUrl(info));
+        console.log("Sent:", nodemailer_1.default.getTestMessageUrl(info));
         await db_1.db.query("UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1", [emailJob.id]);
     }, {
         connection: redis,
         concurrency: 5,
     });
     worker.on("failed", (job, err) => {
-        console.error("❌ Job failed:", job?.id, err.message);
+        console.error("Job failed:", job?.id, err.message);
     });
-    console.log("🚀 Worker started");
+    console.log("Worker started");
 }
