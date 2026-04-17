@@ -18,6 +18,7 @@ export default function Compose() {
     if (!file) return;
     setAttachment(file);
     alert(`Attached: ${file.name}`);
+    console.log(attachment);
   };
 
   const selectPreset = (hoursFromNow: number) => {
