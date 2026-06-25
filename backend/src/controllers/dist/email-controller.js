@@ -40,6 +40,9 @@ exports.getEmailById = exports.getSentEmails = exports.getScheduledEmails = expo
 var crypto_1 = require("crypto");
 var db_1 = require("../config/db");
 var queue_1 = require("../config/queue");
+/**
+ * POST /schedule
+ */
 function scheduleEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, senderEmail, subject, body, startTime, delayBetweenEmailsSeconds, recipients, _b, hourlyLimit, userId, batchId, i, jobId, scheduledAt, delayMs, bullJob, err_1;
@@ -53,6 +56,7 @@ function scheduleEmails(req, res) {
                     }
                     userId = req.user.userId;
                     batchId = crypto_1.randomUUID();
+                    //Create batch
                     return [4 /*yield*/, db_1.db.query("\n      INSERT INTO email_batches\n      (id, user_id, sender_email, subject, body, start_time,\n       delay_between_emails_seconds, hourly_limit, total_emails)\n      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\n      ", [
                             batchId,
                             userId,
@@ -65,6 +69,7 @@ function scheduleEmails(req, res) {
                             recipients.length,
                         ])];
                 case 1:
+                    //Create batch
                     _c.sent();
                     i = 0;
                     _c.label = 2;
@@ -103,6 +108,9 @@ function scheduleEmails(req, res) {
     });
 }
 exports.scheduleEmails = scheduleEmails;
+/**
+ * GET /scheduled
+ */
 function getScheduledEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var userId, rows, err_2;
@@ -127,6 +135,9 @@ function getScheduledEmails(req, res) {
     });
 }
 exports.getScheduledEmails = getScheduledEmails;
+/**
+ * GET /sent
+ */
 function getSentEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var userId, rows, err_3;
@@ -151,6 +162,9 @@ function getSentEmails(req, res) {
     });
 }
 exports.getSentEmails = getSentEmails;
+/**
+ * GET /:id
+ */
 function getEmailById(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var userId, id, rows;

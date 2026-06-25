@@ -7,6 +7,9 @@ exports.getEmailById = getEmailById;
 const crypto_1 = require("crypto");
 const db_1 = require("../config/db");
 const queue_1 = require("../config/queue");
+/**
+ * POST /schedule
+ */
 async function scheduleEmails(req, res) {
     try {
         const { senderEmail, subject, body, startTime, delayBetweenEmailsSeconds, recipients, hourlyLimit = 100, } = req.body;
@@ -15,6 +18,7 @@ async function scheduleEmails(req, res) {
         }
         const userId = req.user.userId;
         const batchId = (0, crypto_1.randomUUID)();
+        //Create batch
         await db_1.db.query(`
       INSERT INTO email_batches
       (id, user_id, sender_email, subject, body, start_time,
@@ -56,6 +60,9 @@ async function scheduleEmails(req, res) {
         res.status(500).json({ error: "Failed to schedule emails" });
     }
 }
+/**
+ * GET /scheduled
+ */
 async function getScheduledEmails(req, res) {
     try {
         const userId = req.user.userId;
@@ -79,6 +86,9 @@ async function getScheduledEmails(req, res) {
         res.status(500).json({ error: "Failed to fetch scheduled emails" });
     }
 }
+/**
+ * GET /sent
+ */
 async function getSentEmails(req, res) {
     try {
         const userId = req.user.userId;
@@ -102,6 +112,9 @@ async function getSentEmails(req, res) {
         res.status(500).json({ error: "Failed to fetch sent emails" });
     }
 }
+/**
+ * GET /:id
+ */
 async function getEmailById(req, res) {
     const userId = req.user.userId;
     const { id } = req.params;

@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -47,32 +36,32 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.logout = exports.getMe = exports.login = exports.register = exports.googleCallbackController = void 0;
+exports.getMe = exports.login = exports.register = exports.googleCallbackController = void 0;
 var jsonwebtoken_1 = require("jsonwebtoken");
 var bcryptjs_1 = require("bcryptjs");
 var db_1 = require("../config/db");
 var crypto_1 = require("crypto");
-var security_1 = require("../config/security");
-function signSessionToken(user) {
-    return jsonwebtoken_1["default"].sign({
-        userId: user.id,
-        email: user.email
-    }, security_1.jwtSecret, { expiresIn: security_1.jwtExpiresIn });
-}
+var dotenv_1 = require("dotenv");
+dotenv_1["default"].config();
+var frontend = process.env.FRONTEND_URL;
 exports.googleCallbackController = function (req, res) {
     var user = req.user;
     if (!user) {
         return res.status(401).json({ error: "Authentication failed" });
     }
-    try {
-        var token = signSessionToken(user);
-        res.cookie(security_1.authCookieName, token, security_1.authCookieOptions);
-        return res.redirect(security_1.frontendUrl + "/auth/callback");
-    }
-    catch (_a) {
+    if (!process.env.JWT_SECRET) {
         return res.status(500).json({ error: "JWT secret missing" });
     }
+    var token = jsonwebtoken_1["default"].sign({
+        userId: user.id,
+        email: user.email
+    }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    console.log(frontend);
+    return res.redirect(frontend + "/auth/callback?token=" + token);
 };
+/**
+ * REGISTER (Non-Gmail)
+ */
 function register(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, email, password, rows, hashedPassword, id, name, err_1;
@@ -111,6 +100,9 @@ function register(req, res) {
     });
 }
 exports.register = register;
+/**
+ * LOGIN (email + password)
+ */
 function login(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, email, password, rows, user, isMatch, token, err_2;
@@ -138,9 +130,11 @@ function login(req, res) {
                     if (!isMatch) {
                         return [2 /*return*/, res.status(401).json({ error: "Invalid credentials" })];
                     }
-                    token = signSessionToken(user);
-                    res.cookie(security_1.authCookieName, token, security_1.authCookieOptions);
-                    res.json({ message: "Login successful" });
+                    token = jsonwebtoken_1["default"].sign({
+                        userId: user.id,
+                        email: user.email
+                    }, process.env.JWT_SECRET, { expiresIn: "1h" });
+                    res.json({ token: token });
                     return [3 /*break*/, 4];
                 case 3:
                     err_2 = _b.sent();
@@ -153,6 +147,9 @@ function login(req, res) {
     });
 }
 exports.login = login;
+/**
+ * GET /auth/me
+ */
 function getMe(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var userId, rows;
@@ -173,8 +170,3 @@ function getMe(req, res) {
     });
 }
 exports.getMe = getMe;
-function logout(_req, res) {
-    res.clearCookie(security_1.authCookieName, __assign(__assign({}, security_1.authCookieOptions), { maxAge: undefined }));
-    res.json({ message: "Logged out" });
-}
-exports.logout = logout;

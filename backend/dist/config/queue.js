@@ -11,15 +11,6 @@ dotenv_1.default.config();
 exports.redis = new ioredis_1.default(process.env.REDIS_URL, {
     maxRetriesPerRequest: null,
 });
-exports.redis.on("connect", () => {
-    console.log("Queue Redis Connected");
-});
-exports.redis.on("ready", () => {
-    console.log("Queue Redis Ready");
-});
-exports.redis.on("error", (err) => {
-    console.error("Queue Redis Error", err);
-});
 exports.emailQueue = new bullmq_1.Queue("email-queue", {
     connection: exports.redis,
     defaultJobOptions: {

@@ -32,6 +32,7 @@ export function startWorker() {
     "email-queue",
     async (job) => {
       const { emailJobId } = job.data;
+      console.log("👷 Processing job:", emailJobId);
 
       const { rows: jobRows } = await db.query(
         "SELECT * FROM email_jobs WHERE id = $1",
@@ -81,44 +82,19 @@ export function startWorker() {
 
       if (lock.rowCount === 0) return;
 
-    try {
-      for (let i = 1; i <= 3; i++) {
-        try {
-            const info = await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: sender_email,
-            to: emailJob.recipient_email,
-            subject: "Scheduled Email",
-            text: "Hello from Email Scheduler",
-    });
-            break;
-        } catch (err) {
-            console.log(`Retry ${i}`);
+        to: emailJob.recipient_email,
+        subject: "Scheduled Email",
+        text: "Hello from Email Scheduler",
+      });
 
-            if (i === 3) throw err;
+      console.log("Sent:", nodemailer.getTestMessageUrl(info));
 
-            await new Promise(r => setTimeout(r, 2000));
-        }
-    }   
       await db.query(
-        "UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1",
+        "UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1",
         [emailJob.id]
       );
-    } catch (err) {
-        console.error("sendMail failed:", err);
-
-        await db.query(
-          `UPDATE email_jobs
-          SET status = 'failed',
-              error_message = $2
-          WHERE id = $1`,
-          [
-            emailJob.id,
-            err instanceof Error ? err.message : "Unknown error",
-          ]
-        );
-
-        throw err;
-      }
     },
     {
       connection: redis,

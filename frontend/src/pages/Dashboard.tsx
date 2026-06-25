@@ -1,16 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 import Tabs from "../components/Tabs";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import { apiFetch } from "../lib/api";
-import { useAuth } from "../auth/useAuth";
 
 type TabType = "scheduled" | "sent";
 
+interface JwtPayload {
+  userId: string;
+  email: string;
+  exp: number;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const auth = useAuth();
-  const user = auth.user;
+
+  const token = localStorage.getItem("token")!;
+
+  const user = useMemo(() => {
+    if (!token) return null;
+    return jwtDecode<JwtPayload>(token);
+  }, [token]);
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     return (localStorage.getItem("activeTab") as TabType) || "scheduled";
@@ -31,6 +42,8 @@ export default function Dashboard() {
   }, [activeTab]);
 
   useEffect(() => {
+    if (!token) return;
+
     async function fetchProfile() {
       try {
         const data = await apiFetch("/auth/me");
@@ -41,10 +54,10 @@ export default function Dashboard() {
     }
 
     fetchProfile();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
+    if (!token) return;
 
     async function fetchCounts() {
       try {
@@ -55,26 +68,16 @@ export default function Dashboard() {
 
         setScheduledCount(scheduledRes.length);
         setSentCount(sentRes.length);
-
-        if (scheduledRes.length === 0 && interval) {
-          clearInterval(interval);
-        }
       } catch (err) {
         console.error("Unexpected error", err);
       }
     }
 
     fetchCounts();
+  }, [token, navigate]);
 
-    interval = setInterval(fetchCounts, 5000);
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, []);
-
-  const handleLogout = async () => {
-    await auth.logout();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
     navigate("/");
   };
 

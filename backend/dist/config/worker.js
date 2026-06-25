@@ -31,6 +31,7 @@ function startWorker() {
     });
     const worker = new bullmq_1.Worker("email-queue", async (job) => {
         const { emailJobId } = job.data;
+        console.log("👷 Processing job:", emailJobId);
         const { rows: jobRows } = await db_1.db.query("SELECT * FROM email_jobs WHERE id = $1", [emailJobId]);
         if (jobRows.length === 0)
             return;
@@ -41,7 +42,6 @@ function startWorker() {
         if (batchRows.length === 0)
             return;
         const { sender_email, hourly_limit } = batchRows[0];
-        console.log({ sender_email, hourly_limit });
         const now = new Date();
         const hourKey = getHourKey(sender_email, now);
         const currentCount = await redis.incr(hourKey);
@@ -58,38 +58,14 @@ function startWorker() {
          WHERE id = $1 AND status = 'scheduled'`, [emailJob.id]);
         if (lock.rowCount === 0)
             return;
-        console.log("========== BEFORE SENDMAIL ==========");
-        console.log({
-            from: process.env.ETHEREAL_USER,
+        const info = await mailer_1.transporter.sendMail({
+            from: sender_email,
             to: emailJob.recipient_email,
             subject: "Scheduled Email",
+            text: "Hello from Email Scheduler",
         });
-        const start = Date.now();
-        try {
-            const info = await mailer_1.transporter.sendMail({
-                from: sender_email,
-                to: emailJob.recipient_email,
-                subject: "Scheduled Email",
-                text: "Hello from Email Scheduler",
-            });
-            console.log("========== AFTER SENDMAIL ==========");
-            console.log("Elapsed:", Date.now() - start, "ms");
-            console.log(info);
-            console.log("Preview:", nodemailer_1.default.getTestMessageUrl(info));
-            await db_1.db.query("UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1", [emailJob.id]);
-        }
-        catch (err) {
-            console.error("========== SENDMAIL ERROR ==========");
-            console.error(err);
-            await db_1.db.query(`UPDATE email_jobs
-     SET status='failed',
-         error_message=$2
-     WHERE id=$1`, [
-                emailJob.id,
-                err instanceof Error ? err.message : "Unknown",
-            ]);
-            throw err;
-        }
+        console.log("Sent:", nodemailer_1.default.getTestMessageUrl(info));
+        await db_1.db.query("UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1", [emailJob.id]);
     }, {
         connection: redis,
         concurrency: 5,

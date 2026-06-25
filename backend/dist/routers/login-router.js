@@ -7,17 +7,15 @@ const express_1 = require("express");
 const passport_1 = __importDefault(require("../config/passport"));
 const login_controller_1 = require("../controllers/login-controller");
 const auth_1 = require("../middleware/auth");
-const security_1 = require("../config/security");
 const router = (0, express_1.Router)();
 router.get("/google", passport_1.default.authenticate("google", {
     scope: ["profile", "email"],
 }));
 router.get("/google/callback", passport_1.default.authenticate("google", {
     session: false,
-    failureRedirect: security_1.frontendUrl,
+    failureRedirect: "/login",
 }), login_controller_1.googleCallbackController);
 router.get("/me", auth_1.requireAuth, login_controller_1.getMe);
 router.post("/login", login_controller_1.login);
-router.post("/logout", login_controller_1.logout);
 router.post("/register", login_controller_1.register);
 exports.default = router;

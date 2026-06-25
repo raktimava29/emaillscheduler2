@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch, redirect } from "../lib/api";
-import { useAuth } from "../auth/useAuth";
+import { apiFetch } from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const auth = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const loginWithGoogle = () => {
-      redirect("/auth/google");
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
 
   const handleLogin = async () => {
@@ -23,7 +21,7 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await apiFetch("/auth/login", {
+      const data = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({
           email,
@@ -31,7 +29,7 @@ export default function Login() {
         }),
       });
 
-      await auth.refreshUser();
+      localStorage.setItem("token", data.token);
       navigate("/dashboard");
     } catch (err: unknown) {
       console.error(err);

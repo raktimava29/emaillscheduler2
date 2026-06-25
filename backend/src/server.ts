@@ -6,19 +6,20 @@ import { db } from "./config/db";
 import passport from "./config/passport";
 import authRoutes from "./routers/login-router";
 import { startWorker } from "./config/worker";
-import { allowedOrigins, requireTrustedOrigin } from "./config/security";
 
 dotenv.config();
 
 const app = express();
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: [
+      "http://localhost:5173",
+      "https://emaillscheduler2.vercel.app",
+    ],
     credentials: true,
   })
 );
 app.use(express.json());
-app.use(requireTrustedOrigin);
 
 app.use(passport.initialize());
 
