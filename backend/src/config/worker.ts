@@ -82,33 +82,43 @@ export function startWorker() {
       if (lock.rowCount === 0) return;
 
     try {
-      await transporter.sendMail({
+      for (let i = 1; i <= 3; i++) {
+        try {
+            const info = await transporter.sendMail({
         from: sender_email,
             to: emailJob.recipient_email,
             subject: "Scheduled Email",
             text: "Hello from Email Scheduler",
     });
+            break;
+        } catch (err) {
+            console.log(`Retry ${i}`);
 
+            if (i === 3) throw err;
+
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }   
       await db.query(
         "UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1",
         [emailJob.id]
       );
     } catch (err) {
-  console.error("sendMail failed:", err);
+        console.error("sendMail failed:", err);
 
-  await db.query(
-    `UPDATE email_jobs
-     SET status = 'failed',
-         error_message = $2
-     WHERE id = $1`,
-    [
-      emailJob.id,
-      err instanceof Error ? err.message : "Unknown error",
-    ]
-  );
+        await db.query(
+          `UPDATE email_jobs
+          SET status = 'failed',
+              error_message = $2
+          WHERE id = $1`,
+          [
+            emailJob.id,
+            err instanceof Error ? err.message : "Unknown error",
+          ]
+        );
 
-  throw err;
-}
+        throw err;
+      }
     },
     {
       connection: redis,

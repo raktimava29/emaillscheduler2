@@ -23,21 +23,35 @@ export default function Tabs({ activeTab, search }: TabsProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchEmails() {
-      setLoading(true);
+  let mounted = true;
 
-      try {
-        const data = await apiFetch(`/emails/${activeTab}`)
+  async function fetchEmails(initial = false) {
+    if (initial) setLoading(true);
+
+    try {
+      const data = await apiFetch(`/emails/${activeTab}`);
+
+      if (mounted) {
         setEmails(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (initial && mounted) {
         setLoading(false);
       }
     }
+  }
 
-    fetchEmails();
-  }, [activeTab]);
+  fetchEmails(true);
+
+  const interval = setInterval(() => fetchEmails(false), 5000);
+
+  return () => {
+    mounted = false;
+    clearInterval(interval);
+  };
+}, [activeTab]);
 
   const filteredEmails = useMemo(() => {
     const query = search.toLowerCase();

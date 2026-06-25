@@ -9,11 +9,18 @@ exports.transporter = nodemailer_1.default.createTransport({
     host: "smtp.ethereal.email",
     port: 587,
     secure: false,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    logger: true,
+    debug: true,
     auth: {
         user: process.env.ETHEREAL_USER,
         pass: process.env.ETHEREAL_PASS,
     },
 });
+console.log("ETHEREAL_USER =", process.env.ETHEREAL_USER);
+console.log("ETHEREAL_PASS exists =", !!process.env.ETHEREAL_PASS);
 exports.transporter.verify((err) => {
     if (err) {
         console.error("SMTP Verify Failed:", err);
