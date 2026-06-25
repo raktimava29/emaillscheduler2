@@ -3,10 +3,18 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { db } from "../config/db";
 import { randomUUID } from "crypto";
-import dotenv from "dotenv";
+import { frontendUrl, authCookieName, authCookieOptions, jwtExpiresIn, jwtSecret } from "../config/security";
 
-dotenv.config();
-const frontend = process.env.FRONTEND_URL
+function signSessionToken(user: { id: string; email: string }) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+    },
+    jwtSecret,
+    { expiresIn: jwtExpiresIn }
+  );
+}
 
 export const googleCallbackController = (req: Request, res: Response) => {
   const user = req.user as any;
@@ -15,28 +23,16 @@ export const googleCallbackController = (req: Request, res: Response) => {
     return res.status(401).json({ error: "Authentication failed" });
   }
 
-  if (!process.env.JWT_SECRET) {
+  try {
+    const token = signSessionToken(user);
+
+    res.cookie(authCookieName, token, authCookieOptions);
+    return res.redirect(`${frontendUrl}/auth/callback`);
+  } catch {
     return res.status(500).json({ error: "JWT secret missing" });
   }
-
-  const token = jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
-    
-  console.log(frontend)
-  return res.redirect(
-    `${frontend}/auth/callback?token=${token}`
-  );
 };
 
-/**
- * REGISTER (Non-Gmail)
- */
 export async function register(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -75,9 +71,6 @@ export async function register(req: Request, res: Response) {
   }
 }
 
-/**
- * LOGIN (email + password)
- */
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -106,25 +99,16 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+    const token = signSessionToken(user);
 
-    res.json({ token });
+    res.cookie(authCookieName, token, authCookieOptions);
+    res.json({ message: "Login successful" });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Login failed" });
   }
 }
 
-/**
- * GET /auth/me
- */
 export async function getMe(req: Request, res: Response) {
   const userId = (req as any).user.userId;
 
@@ -138,4 +122,13 @@ export async function getMe(req: Request, res: Response) {
   }
 
   res.json(rows[0]);
+}
+
+export function logout(_req: Request, res: Response) {
+  res.clearCookie(authCookieName, {
+    ...authCookieOptions,
+    maxAge: undefined,
+  });
+
+  res.json({ message: "Logged out" });
 }

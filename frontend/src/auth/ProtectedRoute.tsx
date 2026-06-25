@@ -9,8 +9,12 @@ export default function ProtectedRoute({
 }) {
   const auth = useContext(AuthContext);
 
-  if (!auth?.token) {
-    return <Navigate to="/login" replace />;
+  if (auth?.loading) {
+    return null;
+  }
+
+  if (!auth?.user) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

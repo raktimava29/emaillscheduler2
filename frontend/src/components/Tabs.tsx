@@ -21,15 +21,9 @@ export default function Tabs({ activeTab, search }: TabsProps) {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     async function fetchEmails() {
-      if (!token) {
-        navigate("/");
-        return;
-      }
-
       setLoading(true);
 
       try {

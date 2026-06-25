@@ -1,6 +1,8 @@
 import IORedis from "ioredis";
 
-const redis = new IORedis("redis://localhost:6379");
+const redis = new IORedis(process.env.REDIS_URL!, {
+  maxRetriesPerRequest: null,
+});
 
 (async () => {
   await redis.set("test", "ok");
