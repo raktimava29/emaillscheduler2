@@ -29,7 +29,7 @@ function requireAuth(req, res, next) {
         return res.status(401).json({ error: "Missing session" });
     }
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        const decoded = jsonwebtoken_1.default.verify(token, security_1.jwtSecret);
         req.user = decoded;
         next();
     }

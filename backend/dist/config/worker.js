@@ -9,7 +9,6 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./db");
 const queue_1 = require("./queue");
-const nodemailer_1 = __importDefault(require("nodemailer"));
 const mailer_1 = require("./mailer");
 dotenv_1.default.config();
 function getHourKey(senderEmail, date) {
@@ -31,7 +30,7 @@ function startWorker() {
     });
     const worker = new bullmq_1.Worker("email-queue", async (job) => {
         const { emailJobId } = job.data;
-        console.log("👷 Processing job:", emailJobId);
+        // console.log("👷 Processing job:", emailJobId);
         const { rows: jobRows } = await db_1.db.query("SELECT * FROM email_jobs WHERE id = $1", [emailJobId]);
         if (jobRows.length === 0)
             return;
@@ -58,14 +57,28 @@ function startWorker() {
          WHERE id = $1 AND status = 'scheduled'`, [emailJob.id]);
         if (lock.rowCount === 0)
             return;
-        const info = await mailer_1.transporter.sendMail({
-            from: sender_email,
-            to: emailJob.recipient_email,
-            subject: "Scheduled Email",
-            text: "Hello from Email Scheduler",
-        });
-        console.log("Sent:", nodemailer_1.default.getTestMessageUrl(info));
-        await db_1.db.query("UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1", [emailJob.id]);
+        console.log(emailJob);
+        console.log("recipient_email =", emailJob.recipient_email);
+        try {
+            await mailer_1.transporter.sendMail({
+                from: sender_email,
+                to: emailJob.recipient_email,
+                subject: "Scheduled Email",
+                text: "Hello from Email Scheduler",
+            });
+            await db_1.db.query("UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1", [emailJob.id]);
+        }
+        catch (err) {
+            console.error("sendMail failed:", err);
+            await db_1.db.query(`UPDATE email_jobs
+     SET status = 'failed',
+         error_message = $2
+     WHERE id = $1`, [
+                emailJob.id,
+                err instanceof Error ? err.message : "Unknown error",
+            ]);
+            throw err;
+        }
     }, {
         connection: redis,
         concurrency: 5,

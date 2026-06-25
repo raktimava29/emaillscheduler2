@@ -11,3 +11,11 @@ exports.transporter = nodemailer_1["default"].createTransport({
         pass: process.env.ETHEREAL_PASS
     }
 });
+exports.transporter.verify(function (err) {
+    if (err) {
+        console.error("SMTP Verify Failed:", err);
+    }
+    else {
+        console.log("SMTP Ready");
+    }
+});

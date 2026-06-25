@@ -12,18 +12,12 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const db_1 = require("../config/db");
 const crypto_1 = require("crypto");
-const dotenv_1 = __importDefault(require("dotenv"));
 const security_1 = require("../config/security");
-dotenv_1.default.config();
-const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
 function signSessionToken(user) {
-    if (!process.env.JWT_SECRET) {
-        throw new Error("JWT secret missing");
-    }
     return jsonwebtoken_1.default.sign({
         userId: user.id,
         email: user.email,
-    }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    }, security_1.jwtSecret, { expiresIn: security_1.jwtExpiresIn });
 }
 const googleCallbackController = (req, res) => {
     const user = req.user;
@@ -33,16 +27,13 @@ const googleCallbackController = (req, res) => {
     try {
         const token = signSessionToken(user);
         res.cookie(security_1.authCookieName, token, security_1.authCookieOptions);
-        return res.redirect(`${frontend}/auth/callback`);
+        return res.redirect(`${security_1.frontendUrl}/auth/callback`);
     }
     catch {
         return res.status(500).json({ error: "JWT secret missing" });
     }
 };
 exports.googleCallbackController = googleCallbackController;
-/**
- * REGISTER (Non-Gmail)
- */
 async function register(req, res) {
     try {
         const { email, password } = req.body;
@@ -67,9 +58,6 @@ async function register(req, res) {
         res.status(500).json({ error: "Registration failed" });
     }
 }
-/**
- * LOGIN (email + password)
- */
 async function login(req, res) {
     try {
         const { email, password } = req.body;
@@ -97,9 +85,6 @@ async function login(req, res) {
         res.status(500).json({ error: "Login failed" });
     }
 }
-/**
- * GET /auth/me
- */
 async function getMe(req, res) {
     const userId = req.user.userId;
     const { rows } = await db_1.db.query("SELECT id, name, email, avatar_url FROM users WHERE id = $1", [userId]);

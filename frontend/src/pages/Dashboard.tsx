@@ -44,6 +44,8 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
     async function fetchCounts() {
       try {
         const [scheduledRes, sentRes] = await Promise.all([
@@ -53,13 +55,23 @@ export default function Dashboard() {
 
         setScheduledCount(scheduledRes.length);
         setSentCount(sentRes.length);
+
+        if (scheduledRes.length === 0 && interval) {
+          clearInterval(interval);
+        }
       } catch (err) {
         console.error("Unexpected error", err);
       }
     }
 
     fetchCounts();
-  }, [navigate]);
+
+    interval = setInterval(fetchCounts, 5000);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await auth.logout();

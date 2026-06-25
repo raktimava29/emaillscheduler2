@@ -7,16 +7,14 @@ const express_1 = require("express");
 const passport_1 = __importDefault(require("../config/passport"));
 const login_controller_1 = require("../controllers/login-controller");
 const auth_1 = require("../middleware/auth");
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+const security_1 = require("../config/security");
 const router = (0, express_1.Router)();
-const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
 router.get("/google", passport_1.default.authenticate("google", {
     scope: ["profile", "email"],
 }));
 router.get("/google/callback", passport_1.default.authenticate("google", {
     session: false,
-    failureRedirect: frontend,
+    failureRedirect: security_1.frontendUrl,
 }), login_controller_1.googleCallbackController);
 router.get("/me", auth_1.requireAuth, login_controller_1.getMe);
 router.post("/login", login_controller_1.login);

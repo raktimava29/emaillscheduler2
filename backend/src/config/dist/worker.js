@@ -63,7 +63,7 @@ function startWorker() {
         maxRetriesPerRequest: null
     });
     var worker = new bullmq_1.Worker("email-queue", function (job) { return __awaiter(_this, void 0, void 0, function () {
-        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, hourly_limit, now, hourKey, currentCount, nextRun, lock, info;
+        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, hourly_limit, now, hourKey, currentCount, nextRun, lock, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -107,20 +107,32 @@ function startWorker() {
                     lock = _b.sent();
                     if (lock.rowCount === 0)
                         return [2 /*return*/];
+                    _b.label = 10;
+                case 10:
+                    _b.trys.push([10, 13, , 15]);
                     return [4 /*yield*/, mailer_1.transporter.sendMail({
                             from: sender_email,
                             to: emailJob.recipient_email,
                             subject: "Scheduled Email",
                             text: "Hello from Email Scheduler"
                         })];
-                case 10:
-                    info = _b.sent();
-                    // console.log("Sent:", nodemailer.getTestMessageUrl(info));
-                    return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1", [emailJob.id])];
                 case 11:
-                    // console.log("Sent:", nodemailer.getTestMessageUrl(info));
                     _b.sent();
-                    return [2 /*return*/];
+                    return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1", [emailJob.id])];
+                case 12:
+                    _b.sent();
+                    return [3 /*break*/, 15];
+                case 13:
+                    err_1 = _b.sent();
+                    console.error("sendMail failed:", err_1);
+                    return [4 /*yield*/, db_1.db.query("UPDATE email_jobs\n     SET status = 'failed',\n         error_message = $2\n     WHERE id = $1", [
+                            emailJob.id,
+                            err_1 instanceof Error ? err_1.message : "Unknown error",
+                        ])];
+                case 14:
+                    _b.sent();
+                    throw err_1;
+                case 15: return [2 /*return*/];
             }
         });
     }); }, {
