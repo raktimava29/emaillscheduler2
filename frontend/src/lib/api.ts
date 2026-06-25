@@ -14,10 +14,6 @@ export async function apiFetch(
     ...options,
   });
 
-  if (res.status === 401) {
-    window.location.href = "/";
-  }
-
   let data;
 
   try {
