@@ -1,33 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import type { User } from "../types/users";
+import { apiFetch } from "../lib/api";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem("token");
-  });
-
-  const login = (user: User, token: string) => {
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token", token);
-    setUser(user);
-    setToken(token);
+  const refreshUser = async () => {
+    try {
+      const user = await apiFetch("/auth/me");
+      setUser(user);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+  useEffect(() => {
+    void refreshUser();
+  }, []);
+
+  const logout = async () => {
+    await apiFetch("/auth/logout", {
+      method: "POST"
+    });
+
     setUser(null);
-    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

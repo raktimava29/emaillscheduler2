@@ -1,7 +1,8 @@
 import { Router } from "express";
 import passport from "../config/passport";
-import { getMe, googleCallbackController, login, register } from "../controllers/login-controller";
+import { getMe, googleCallbackController, login, logout, register } from "../controllers/login-controller";
 import { requireAuth } from "../middleware/auth";
+import { frontendUrl } from "../config/security";
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get(
   "/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: "/login",
+    failureRedirect: frontendUrl,
   }),
   googleCallbackController
 );
@@ -24,6 +25,7 @@ router.get(
 router.get("/me", requireAuth, getMe);
 
 router.post("/login", login);
+router.post("/logout", logout);
 router.post("/register", register);
 
 export default router;

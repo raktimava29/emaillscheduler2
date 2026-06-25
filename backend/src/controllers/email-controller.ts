@@ -3,9 +3,6 @@ import { randomUUID } from "crypto";
 import { db } from "../config/db";
 import { emailQueue } from "../config/queue";
 
-/**
- * POST /schedule
- */
 export async function scheduleEmails(req: Request, res: Response) {
   try {
     const {
@@ -25,7 +22,6 @@ export async function scheduleEmails(req: Request, res: Response) {
     const userId = (req as any).user.userId;
     const batchId = randomUUID();
 
-    //Create batch
     await db.query(
       `
       INSERT INTO email_batches
@@ -89,9 +85,6 @@ export async function scheduleEmails(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /scheduled
- */
 export async function getScheduledEmails(req: Request, res: Response) {
   try {
     const userId = (req as any).user.userId;
@@ -120,9 +113,6 @@ export async function getScheduledEmails(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /sent
- */
 export async function getSentEmails(req: Request, res: Response) {
   try {
     const userId = (req as any).user.userId;
@@ -151,9 +141,6 @@ export async function getSentEmails(req: Request, res: Response) {
   }
 }
 
-/**
- * GET /:id
- */
 export async function getEmailById(req: Request, res: Response) {
   const userId = (req as any).user.userId;
   const { id } = req.params;

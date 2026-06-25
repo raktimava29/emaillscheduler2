@@ -20,15 +20,8 @@ export default function MailView() {
   const [loading, setLoading] = useState(true);
   const [isStarred, setIsStarred] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
     async function fetchMail() {
-      if (!token) {
-        navigate("/");
-        return;
-      }
-
       try {
         const data = await apiFetch(`/emails/${id}`);
         setMail(data);
@@ -40,7 +33,7 @@ export default function MailView() {
     }
 
     fetchMail();
-  }, [id, token, navigate]);
+  }, [id]);
 
   if (loading) {
     return (

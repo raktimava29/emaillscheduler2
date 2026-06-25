@@ -4,26 +4,31 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  const token = localStorage.getItem("token");
-
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
+    ...options,
   });
 
-  if (res.status === 401) {
-    localStorage.removeItem("token");
-    window.location.href = "/";
+  let data;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
   }
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error?.error || "API error");
+    throw new Error(data?.error || "API error");
   }
 
-  return res.json();
+  return data;
+}
+
+export function redirect(path: string) {
+    window.location.href = `${API_BASE}${path}`;
 }

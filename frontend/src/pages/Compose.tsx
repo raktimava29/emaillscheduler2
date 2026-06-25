@@ -13,8 +13,6 @@ export default function Compose() {
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   const handleAttach = (file: File | null) => {
     if (!file) return;
     setAttachment(file);
@@ -38,12 +36,6 @@ export default function Compose() {
   const handleSend = async () => {
     if (!to || !subject || !body) {
       alert("Please fill all required fields");
-      return;
-    }
-
-    if (!token) {
-      alert("Not authenticated");
-      navigate("/");
       return;
     }
 

@@ -44,17 +44,18 @@ var db_1 = require("./config/db");
 var passport_1 = require("./config/passport");
 var login_router_1 = require("./routers/login-router");
 var worker_1 = require("./config/worker");
+var security_1 = require("./config/security");
+var gmail_router_1 = require("./routers/gmail-router");
 dotenv_1["default"].config();
 var app = express_1["default"]();
 app.use(cors_1["default"]({
-    origin: [
-        "http://localhost:5173",
-        "https://emaillscheduler2.vercel.app",
-    ],
+    origin: security_1.allowedOrigins,
     credentials: true
 }));
 app.use(express_1["default"].json());
+app.use(security_1.requireTrustedOrigin);
 app.use(passport_1["default"].initialize());
+app.use("/gmail", gmail_router_1["default"]);
 app.get("/", function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var rows;
     return __generator(this, function (_a) {
