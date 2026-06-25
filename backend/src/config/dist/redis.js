@@ -41,16 +41,11 @@ var redis = new ioredis_1["default"](process.env.REDIS_URL, {
     maxRetriesPerRequest: null
 });
 (function () { return __awaiter(void 0, void 0, void 0, function () {
-    var value;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, redis.set("test", "ok")];
             case 1:
                 _a.sent();
-                return [4 /*yield*/, redis.get("test")];
-            case 2:
-                value = _a.sent();
-                console.log(value);
                 process.exit(0);
                 return [2 /*return*/];
         }

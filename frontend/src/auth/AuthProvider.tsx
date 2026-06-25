@@ -1,40 +1,30 @@
 import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import type { User } from "../types/users";
-
-const API_BASE = import.meta.env.VITE_API_URL;
+import { apiFetch } from "../lib/api";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
-    const res = await fetch(`${API_BASE}/auth/me`, {
-      credentials: "include",
-    });
-
-    if (!res.ok) {
+    try {
+      const user = await apiFetch("/auth/me");
+      setUser(user);
+    } catch {
       setUser(null);
-      throw new Error("Not authenticated");
+    } finally {
+      setLoading(false);
     }
-
-    setUser(await res.json());
   };
 
   useEffect(() => {
-    refreshUser()
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    void refreshUser();
   }, []);
 
   const logout = async () => {
-    await fetch(`${API_BASE}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
+    await apiFetch("/auth/logout", {
+      method: "POST"
     });
 
     setUser(null);

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
+import { apiFetch, redirect } from "../lib/api";
 import { useAuth } from "../auth/useAuth";
 
 export default function Login() {
@@ -12,7 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const loginWithGoogle = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+      redirect("/auth/google");
   };
 
   const handleLogin = async () => {

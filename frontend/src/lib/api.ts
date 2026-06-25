@@ -11,16 +11,28 @@ export async function apiFetch(
       "Content-Type": "application/json",
       ...options.headers,
     },
+    ...options,
   });
 
   if (res.status === 401) {
     window.location.href = "/";
   }
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error?.error || "API error");
+  let data;
+
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
   }
 
-  return res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || "API error");
+  }
+
+  return data;
+}
+
+export function redirect(path: string) {
+    window.location.href = `${API_BASE}${path}`;
 }

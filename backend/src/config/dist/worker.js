@@ -42,7 +42,6 @@ var ioredis_1 = require("ioredis");
 var dotenv_1 = require("dotenv");
 var db_1 = require("./db");
 var queue_1 = require("./queue");
-var nodemailer_1 = require("nodemailer");
 var mailer_1 = require("./mailer");
 dotenv_1["default"].config();
 function getHourKey(senderEmail, date) {
@@ -69,7 +68,6 @@ function startWorker() {
             switch (_b.label) {
                 case 0:
                     emailJobId = job.data.emailJobId;
-                    console.log("👷 Processing job:", emailJobId);
                     return [4 /*yield*/, db_1.db.query("SELECT * FROM email_jobs WHERE id = $1", [emailJobId])];
                 case 1:
                     jobRows = (_b.sent()).rows;
@@ -117,9 +115,10 @@ function startWorker() {
                         })];
                 case 10:
                     info = _b.sent();
-                    console.log("Sent:", nodemailer_1["default"].getTestMessageUrl(info));
+                    // console.log("Sent:", nodemailer.getTestMessageUrl(info));
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1", [emailJob.id])];
                 case 11:
+                    // console.log("Sent:", nodemailer.getTestMessageUrl(info));
                     _b.sent();
                     return [2 /*return*/];
             }

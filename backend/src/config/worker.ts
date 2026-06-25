@@ -32,7 +32,7 @@ export function startWorker() {
     "email-queue",
     async (job) => {
       const { emailJobId } = job.data;
-      console.log("👷 Processing job:", emailJobId);
+      // console.log("👷 Processing job:", emailJobId);
 
       const { rows: jobRows } = await db.query(
         "SELECT * FROM email_jobs WHERE id = $1",
@@ -89,7 +89,7 @@ export function startWorker() {
         text: "Hello from Email Scheduler",
       });
 
-      console.log("Sent:", nodemailer.getTestMessageUrl(info));
+      // console.log("Sent:", nodemailer.getTestMessageUrl(info));
 
       await db.query(
         "UPDATE email_jobs SET status = 'sent', sent_at = NOW() WHERE id = $1",
