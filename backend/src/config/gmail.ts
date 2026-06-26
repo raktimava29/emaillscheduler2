@@ -5,17 +5,3 @@ export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_SECRET!,
   process.env.GOOGLE_GMAIL_CALLBACK_URL!
 );
-
-export let gmailTokens: {
-  accessToken?: string;
-  refreshToken?: string;
-  email?: string;
-} = {};
-
-export function saveTokens(tokens: {
-  accessToken?: string;
-  refreshToken?: string;
-  email?: string;
-}) {
-  gmailTokens = tokens;
-}

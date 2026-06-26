@@ -37,9 +37,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 exports.sendTestMail = exports.gmailCallback = exports.connectGmail = void 0;
-var nodemailer_1 = require("nodemailer");
 var googleapis_1 = require("googleapis");
 var gmail_1 = require("../config/gmail");
+var db_1 = require("../config/db");
+var gmail_service_1 = require("../services/gmail-service");
 var SCOPES = [
     "openid",
     "email",
@@ -52,27 +53,26 @@ function connectGmail(req, res) {
         prompt: "consent",
         scope: SCOPES
     });
-    console.log("OAuth URL:", url);
     res.redirect(url);
 }
 exports.connectGmail = connectGmail;
 function gmailCallback(req, res) {
-    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function () {
-        var code, tokens, oauth2, user, err_1;
-        return __generator(this, function (_d) {
-            switch (_d.label) {
+        var code, currentUser, tokens, oauth2, user, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
                 case 0:
-                    _d.trys.push([0, 3, , 4]);
+                    _a.trys.push([0, 5, , 6]);
                     code = req.query.code;
                     if (!code) {
                         return [2 /*return*/, res.status(400).json({
                                 error: "Missing authorization code"
                             })];
                     }
+                    currentUser = req.user;
                     return [4 /*yield*/, gmail_1.oauth2Client.getToken(code)];
                 case 1:
-                    tokens = (_d.sent()).tokens;
+                    tokens = (_a.sent()).tokens;
                     gmail_1.oauth2Client.setCredentials(tokens);
                     oauth2 = googleapis_1.google.oauth2({
                         auth: gmail_1.oauth2Client,
@@ -80,29 +80,32 @@ function gmailCallback(req, res) {
                     });
                     return [4 /*yield*/, oauth2.userinfo.get()];
                 case 2:
-                    user = _d.sent();
-                    gmail_1.saveTokens({
-                        accessToken: (_a = tokens.access_token) !== null && _a !== void 0 ? _a : undefined,
-                        refreshToken: (_b = tokens.refresh_token) !== null && _b !== void 0 ? _b : undefined,
-                        email: (_c = user.data.email) !== null && _c !== void 0 ? _c : undefined
-                    });
-                    console.log("\n====== Gmail Connected ======");
-                    console.log("Email:", user.data.email);
-                    console.log("Access Token:", tokens.access_token);
-                    console.log("Refresh Token:", tokens.refresh_token);
-                    console.log("=============================\n");
-                    return [2 /*return*/, res.json({
-                            success: true,
-                            email: user.data.email,
-                            message: "Gmail connected successfully."
-                        })];
+                    user = _a.sent();
+                    if (currentUser.email !== user.data.email) {
+                        return [2 /*return*/, res.status(400).json({
+                                error: "The selected Gmail account does not match your logged-in account."
+                            })];
+                    }
+                    if (!tokens.refresh_token) return [3 /*break*/, 4];
+                    return [4 /*yield*/, db_1.db.query("\n      UPDATE users\n      SET gmail_refresh_token = $1\n      WHERE id = $2\n      ", [
+                            tokens.refresh_token,
+                            currentUser.userId,
+                        ])];
                 case 3:
-                    err_1 = _d.sent();
+                    _a.sent();
+                    _a.label = 4;
+                case 4: return [2 /*return*/, res.json({
+                        success: true,
+                        email: user.data.email,
+                        message: "Gmail connected successfully."
+                    })];
+                case 5:
+                    err_1 = _a.sent();
                     console.error(err_1);
                     return [2 /*return*/, res.status(500).json({
                             error: "Failed to connect Gmail"
                         })];
-                case 4: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     });
@@ -110,47 +113,41 @@ function gmailCallback(req, res) {
 exports.gmailCallback = gmailCallback;
 function sendTestMail(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var accessToken, transporter, err_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var currentUser, rows, _a, email, gmail_refresh_token, err_2;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
-                    _a.trys.push([0, 3, , 4]);
-                    if (!gmail_1.gmailTokens.refreshToken || !gmail_1.gmailTokens.email) {
+                    _b.trys.push([0, 3, , 4]);
+                    currentUser = req.user;
+                    return [4 /*yield*/, db_1.db.query("\n      SELECT\n        email,\n        gmail_refresh_token\n      FROM users\n      WHERE id = $1\n      ", [currentUser.userId])];
+                case 1:
+                    rows = (_b.sent()).rows;
+                    if (rows.length === 0) {
+                        return [2 /*return*/, res.status(404).json({
+                                error: "User not found."
+                            })];
+                    }
+                    _a = rows[0], email = _a.email, gmail_refresh_token = _a.gmail_refresh_token;
+                    if (!gmail_refresh_token) {
                         return [2 /*return*/, res.status(400).json({
                                 error: "Connect Gmail first."
                             })];
                     }
-                    gmail_1.oauth2Client.setCredentials({
-                        refresh_token: gmail_1.gmailTokens.refreshToken
-                    });
-                    return [4 /*yield*/, gmail_1.oauth2Client.getAccessToken()];
-                case 1:
-                    accessToken = _a.sent();
-                    transporter = nodemailer_1["default"].createTransport({
-                        service: "gmail",
-                        auth: {
-                            type: "OAuth2",
-                            user: gmail_1.gmailTokens.email,
-                            clientId: process.env.GOOGLE_CLIENT_ID,
-                            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                            refreshToken: gmail_1.gmailTokens.refreshToken,
-                            accessToken: accessToken.token
-                        }
-                    });
-                    return [4 /*yield*/, transporter.sendMail({
-                            from: gmail_1.gmailTokens.email,
-                            to: gmail_1.gmailTokens.email,
-                            subject: "ChronoMail Gmail SMTP Test",
-                            text: "🎉 Gmail OAuth + SMTP is working!"
+                    return [4 /*yield*/, gmail_service_1.sendEmail({
+                            from: email,
+                            to: email,
+                            subject: "ChronoMail Gmail API Test",
+                            text: "🎉 Gmail API is working!",
+                            refreshToken: gmail_refresh_token
                         })];
                 case 2:
-                    _a.sent();
+                    _b.sent();
                     return [2 /*return*/, res.json({
                             success: true,
-                            message: "Test email sent!"
+                            message: "Test email sent."
                         })];
                 case 3:
-                    err_2 = _a.sent();
+                    err_2 = _b.sent();
                     console.error(err_2);
                     return [2 /*return*/, res.status(500).json({
                             error: "Failed to send email"

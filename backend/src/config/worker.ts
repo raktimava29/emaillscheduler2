@@ -3,8 +3,7 @@ import IORedis from "ioredis";
 import dotenv from "dotenv";
 import { db } from "./db";
 import { emailQueue } from "./queue";
-import nodemailer from "nodemailer";
-import { transporter } from "./mailer";
+import { sendEmail } from "../services/gmail-service";
 
 dotenv.config();
 
@@ -13,6 +12,7 @@ function getHourKey(senderEmail: string, date: Date) {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const hh = String(date.getHours()).padStart(2, "0");
+
   return `email_rate:${senderEmail}:${yyyy}-${mm}-${dd}-${hh}`;
 }
 
@@ -39,26 +39,50 @@ export function startWorker() {
       );
 
       if (jobRows.length === 0) return;
+
       const emailJob = jobRows[0];
 
       if (emailJob.status !== "scheduled") return;
 
+      // Fetch everything needed in one query
       const { rows: batchRows } = await db.query(
-        "SELECT sender_email, hourly_limit FROM email_batches WHERE id = $1",
+        `
+        SELECT
+          b.sender_email,
+          b.hourly_limit,
+          u.gmail_refresh_token
+        FROM email_batches b
+        JOIN users u
+          ON b.user_id = u.id
+        WHERE b.id = $1
+        `,
         [emailJob.batch_id]
       );
 
       if (batchRows.length === 0) return;
-      const { sender_email, hourly_limit } = batchRows[0];
+
+      const {
+        sender_email,
+        hourly_limit,
+        gmail_refresh_token,
+      } = batchRows[0];
+
+      if (!gmail_refresh_token) {
+        throw new Error("User has not connected Gmail.");
+      }
 
       const now = new Date();
       const hourKey = getHourKey(sender_email, now);
 
       const currentCount = await redis.incr(hourKey);
-      if (currentCount === 1) await redis.expire(hourKey, 3600);
+
+      if (currentCount === 1) {
+        await redis.expire(hourKey, 3600);
+      }
 
       if (currentCount > hourly_limit) {
         const nextRun = startOfNextHour(now);
+
         await db.query(
           "UPDATE email_jobs SET scheduled_at = $1 WHERE id = $2",
           [nextRun, emailJob.id]
@@ -67,50 +91,70 @@ export function startWorker() {
         await emailQueue.add(
           "send-email",
           { emailJobId: emailJob.id },
-          { delay: nextRun.getTime() - Date.now() }
+          {
+            delay: nextRun.getTime() - Date.now(),
+          }
         );
+
         return;
       }
 
       const lock = await db.query(
-        `UPDATE email_jobs
-         SET status = 'processing'
-         WHERE id = $1 AND status = 'scheduled'`,
+        `
+        UPDATE email_jobs
+        SET status = 'processing'
+        WHERE id = $1
+          AND status = 'scheduled'
+        `,
         [emailJob.id]
       );
 
       if (lock.rowCount === 0) return;
 
-    try {
-      for (let i = 1; i <= 3; i++) {
-        try {
-            const info = await transporter.sendMail({
-        from: sender_email,
-            to: emailJob.recipient_email,
-            subject: "Scheduled Email",
-            text: "Hello from Email Scheduler",
-    });
+      try {
+        for (let i = 1; i <= 3; i++) {
+          try {
+            await sendEmail({
+              from: sender_email,
+              to: emailJob.recipient_email,
+              subject: "Scheduled Email",
+              text: "Hello from Email Scheduler",
+              refreshToken: gmail_refresh_token,
+            });
+
             break;
-        } catch (err) {
+          } catch (err) {
             console.log(`Retry ${i}`);
 
-            if (i === 3) throw err;
+            if (i === 3) {
+              throw err;
+            }
 
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise((resolve) =>
+              setTimeout(resolve, 2000)
+            );
+          }
         }
-    }   
-      await db.query(
-        "UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1",
-        [emailJob.id]
-      );
-    } catch (err) {
-        console.error("sendMail failed:", err);
 
         await db.query(
-          `UPDATE email_jobs
+          `
+          UPDATE email_jobs
+          SET status = 'sent',
+              sent_at = NOW()
+          WHERE id = $1
+          `,
+          [emailJob.id]
+        );
+      } catch (err) {
+        console.error("sendEmail failed:", err);
+
+        await db.query(
+          `
+          UPDATE email_jobs
           SET status = 'failed',
               error_message = $2
-          WHERE id = $1`,
+          WHERE id = $1
+          `,
           [
             emailJob.id,
             err instanceof Error ? err.message : "Unknown error",

@@ -42,7 +42,7 @@ var ioredis_1 = require("ioredis");
 var dotenv_1 = require("dotenv");
 var db_1 = require("./db");
 var queue_1 = require("./queue");
-var mailer_1 = require("./mailer");
+var gmail_service_1 = require("../services/gmail-service");
 dotenv_1["default"].config();
 function getHourKey(senderEmail, date) {
     var yyyy = date.getFullYear();
@@ -63,7 +63,7 @@ function startWorker() {
         maxRetriesPerRequest: null
     });
     var worker = new bullmq_1.Worker("email-queue", function (job) { return __awaiter(_this, void 0, void 0, function () {
-        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, hourly_limit, now, hourKey, currentCount, nextRun, lock, i, info, err_1, err_2;
+        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, i, err_1, err_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -76,12 +76,15 @@ function startWorker() {
                     emailJob = jobRows[0];
                     if (emailJob.status !== "scheduled")
                         return [2 /*return*/];
-                    return [4 /*yield*/, db_1.db.query("SELECT sender_email, hourly_limit FROM email_batches WHERE id = $1", [emailJob.batch_id])];
+                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.sender_email,\n          b.hourly_limit,\n          u.gmail_refresh_token\n        FROM email_batches b\n        JOIN users u\n          ON b.user_id = u.id\n        WHERE b.id = $1\n        ", [emailJob.batch_id])];
                 case 2:
                     batchRows = (_b.sent()).rows;
                     if (batchRows.length === 0)
                         return [2 /*return*/];
-                    _a = batchRows[0], sender_email = _a.sender_email, hourly_limit = _a.hourly_limit;
+                    _a = batchRows[0], sender_email = _a.sender_email, hourly_limit = _a.hourly_limit, gmail_refresh_token = _a.gmail_refresh_token;
+                    if (!gmail_refresh_token) {
+                        throw new Error("User has not connected Gmail.");
+                    }
                     now = new Date();
                     hourKey = getHourKey(sender_email, now);
                     return [4 /*yield*/, redis.incr(hourKey)];
@@ -98,11 +101,13 @@ function startWorker() {
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET scheduled_at = $1 WHERE id = $2", [nextRun, emailJob.id])];
                 case 6:
                     _b.sent();
-                    return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: emailJob.id }, { delay: nextRun.getTime() - Date.now() })];
+                    return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: emailJob.id }, {
+                            delay: nextRun.getTime() - Date.now()
+                        })];
                 case 7:
                     _b.sent();
                     return [2 /*return*/];
-                case 8: return [4 /*yield*/, db_1.db.query("UPDATE email_jobs\n         SET status = 'processing'\n         WHERE id = $1 AND status = 'scheduled'", [emailJob.id])];
+                case 8: return [4 /*yield*/, db_1.db.query("\n        UPDATE email_jobs\n        SET status = 'processing'\n        WHERE id = $1\n          AND status = 'scheduled'\n        ", [emailJob.id])];
                 case 9:
                     lock = _b.sent();
                     if (lock.rowCount === 0)
@@ -117,35 +122,39 @@ function startWorker() {
                     _b.label = 12;
                 case 12:
                     _b.trys.push([12, 14, , 16]);
-                    return [4 /*yield*/, mailer_1.transporter.sendMail({
+                    return [4 /*yield*/, gmail_service_1.sendEmail({
                             from: sender_email,
                             to: emailJob.recipient_email,
                             subject: "Scheduled Email",
-                            text: "Hello from Email Scheduler"
+                            text: "Hello from Email Scheduler",
+                            refreshToken: gmail_refresh_token
                         })];
                 case 13:
-                    info = _b.sent();
+                    _b.sent();
                     return [3 /*break*/, 17];
                 case 14:
                     err_1 = _b.sent();
                     console.log("Retry " + i);
-                    if (i === 3)
+                    if (i === 3) {
                         throw err_1;
-                    return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 2000); })];
+                    }
+                    return [4 /*yield*/, new Promise(function (resolve) {
+                            return setTimeout(resolve, 2000);
+                        })];
                 case 15:
                     _b.sent();
                     return [3 /*break*/, 16];
                 case 16:
                     i++;
                     return [3 /*break*/, 11];
-                case 17: return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET status='sent', sent_at=NOW() WHERE id=$1", [emailJob.id])];
+                case 17: return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'sent',\n              sent_at = NOW()\n          WHERE id = $1\n          ", [emailJob.id])];
                 case 18:
                     _b.sent();
                     return [3 /*break*/, 21];
                 case 19:
                     err_2 = _b.sent();
-                    console.error("sendMail failed:", err_2);
-                    return [4 /*yield*/, db_1.db.query("UPDATE email_jobs\n          SET status = 'failed',\n              error_message = $2\n          WHERE id = $1", [
+                    console.error("sendEmail failed:", err_2);
+                    return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'failed',\n              error_message = $2\n          WHERE id = $1\n          ", [
                             emailJob.id,
                             err_2 instanceof Error ? err_2.message : "Unknown error",
                         ])];

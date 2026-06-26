@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
-import nodemailer from "nodemailer";
 import { google } from "googleapis";
-import { oauth2Client, gmailTokens, saveTokens } from "../config/gmail";
+import { oauth2Client } from "../config/gmail";
+import { db } from "../config/db";
+import { sendEmail } from "../services/gmail-service";
 
 const SCOPES = [
   "openid",
@@ -17,7 +18,6 @@ export function connectGmail(req: Request, res: Response) {
     scope: SCOPES,
   });
 
-  console.log("OAuth URL:", url);
   res.redirect(url);
 }
 
@@ -31,6 +31,8 @@ export async function gmailCallback(req: Request, res: Response) {
       });
     }
 
+    const currentUser = (req as any).user;
+
     const { tokens } = await oauth2Client.getToken(code);
 
     oauth2Client.setCredentials(tokens);
@@ -42,17 +44,26 @@ export async function gmailCallback(req: Request, res: Response) {
 
     const user = await oauth2.userinfo.get();
 
-    saveTokens({
-      accessToken: tokens.access_token ?? undefined,
-      refreshToken: tokens.refresh_token ?? undefined,
-      email: user.data.email ?? undefined,
-    });
+    if (currentUser.email !== user.data.email) {
+      return res.status(400).json({
+        error:
+          "The selected Gmail account does not match your logged-in account.",
+      });
+    }
 
-    console.log("\n====== Gmail Connected ======");
-    console.log("Email:", user.data.email);
-    console.log("Access Token:", tokens.access_token);
-    console.log("Refresh Token:", tokens.refresh_token);
-    console.log("=============================\n");
+  if (tokens.refresh_token) {
+    await db.query(
+      `
+      UPDATE users
+      SET gmail_refresh_token = $1
+      WHERE id = $2
+      `,
+      [
+        tokens.refresh_token,
+        currentUser.userId,
+      ]
+    );
+  }
 
     return res.json({
       success: true,
@@ -70,40 +81,44 @@ export async function gmailCallback(req: Request, res: Response) {
 
 export async function sendTestMail(req: Request, res: Response) {
   try {
-    if (!gmailTokens.refreshToken || !gmailTokens.email) {
+    const currentUser = (req as any).user;
+
+    const { rows } = await db.query(
+      `
+      SELECT
+        email,
+        gmail_refresh_token
+      FROM users
+      WHERE id = $1
+      `,
+      [currentUser.userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        error: "User not found.",
+      });
+    }
+
+    const { email, gmail_refresh_token } = rows[0];
+
+    if (!gmail_refresh_token) {
       return res.status(400).json({
         error: "Connect Gmail first.",
       });
     }
 
-    oauth2Client.setCredentials({
-      refresh_token: gmailTokens.refreshToken,
-    });
-
-    const accessToken = await oauth2Client.getAccessToken();
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: gmailTokens.email,
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        refreshToken: gmailTokens.refreshToken,
-        accessToken: accessToken.token!,
-      },
-    });
-
-    await transporter.sendMail({
-      from: gmailTokens.email,
-      to: gmailTokens.email,
-      subject: "ChronoMail Gmail SMTP Test",
-      text: "🎉 Gmail OAuth + SMTP is working!",
+    await sendEmail({
+      from: email,
+      to: email,
+      subject: "ChronoMail Gmail API Test",
+      text: "🎉 Gmail API is working!",
+      refreshToken: gmail_refresh_token,
     });
 
     return res.json({
       success: true,
-      message: "Test email sent!",
+      message: "Test email sent.",
     });
   } catch (err) {
     console.error(err);

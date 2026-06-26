@@ -4,13 +4,14 @@ import {
   gmailCallback,
   sendTestMail,
 } from "../controllers/gmail-controller";
+import { requireAuth } from "../middleware/auth";
 
 const router = Router();
 
-router.get("/connect", connectGmail);
+router.get("/connect", requireAuth, connectGmail);
 
-router.get("/callback", gmailCallback);
+router.get("/callback", requireAuth, gmailCallback);
 
-router.post("/test", sendTestMail);
+router.post("/test", requireAuth, sendTestMail);
 
 export default router;
