@@ -65,11 +65,9 @@ export async function gmailCallback(req: Request, res: Response) {
     );
   }
 
-    return res.json({
-      success: true,
-      email: user.data.email,
-      message: "Gmail connected successfully.",
-    });
+    return res.redirect(
+    `${process.env.FRONTEND_URL}/compose?gmail=connected`
+  );
   } catch (err) {
     console.error(err);
 

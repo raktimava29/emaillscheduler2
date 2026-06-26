@@ -6,7 +6,6 @@ import { emailQueue } from "../config/queue";
 export async function scheduleEmails(req: Request, res: Response) {
   try {
     const {
-      senderEmail,
       subject,
       body,
       startTime,
@@ -22,6 +21,30 @@ export async function scheduleEmails(req: Request, res: Response) {
     const userId = (req as any).user.userId;
     const batchId = randomUUID();
 
+    const { rows: userRows } = await db.query(
+      `
+      SELECT 
+        email,
+        gmail_refresh_token
+      FROM users
+      WHERE id = $1
+      `,
+      [userId]
+    );
+
+    if (
+      userRows.length === 0 ||
+      !userRows[0].gmail_refresh_token
+    ) {
+      return res.status(403).json({
+        code: "GMAIL_NOT_CONNECTED",
+        message: "Please connect your Gmail account first.",
+        connectUrl: "/gmail/connect",
+      });
+    }
+
+    const senderEmail = userRows[0].email;
+    
     await db.query(
       `
       INSERT INTO email_batches

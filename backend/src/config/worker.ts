@@ -49,12 +49,14 @@ export function startWorker() {
         `
         SELECT
           b.sender_email,
+          b.subject,
+          b.body,
           b.hourly_limit,
           u.gmail_refresh_token
-        FROM email_batches b
-        JOIN users u
-          ON b.user_id = u.id
-        WHERE b.id = $1
+      FROM email_batches b
+      JOIN users u
+      ON b.user_id = u.id
+      WHERE b.id = $1
         `,
         [emailJob.batch_id]
       );
@@ -63,6 +65,8 @@ export function startWorker() {
 
       const {
         sender_email,
+        subject,
+        body,
         hourly_limit,
         gmail_refresh_token,
       } = batchRows[0];
@@ -117,8 +121,8 @@ export function startWorker() {
             await sendEmail({
               from: sender_email,
               to: emailJob.recipient_email,
-              subject: "Scheduled Email",
-              text: "Hello from Email Scheduler",
+              subject,
+              text: body,
               refreshToken: gmail_refresh_token,
             });
 

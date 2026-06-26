@@ -94,11 +94,7 @@ function gmailCallback(req, res) {
                 case 3:
                     _a.sent();
                     _a.label = 4;
-                case 4: return [2 /*return*/, res.json({
-                        success: true,
-                        email: user.data.email,
-                        message: "Gmail connected successfully."
-                    })];
+                case 4: return [2 /*return*/, res.redirect(process.env.FRONTEND_URL + "/compose?gmail=connected")];
                 case 5:
                     err_1 = _a.sent();
                     console.error(err_1);

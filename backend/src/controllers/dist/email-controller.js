@@ -42,17 +42,29 @@ var db_1 = require("../config/db");
 var queue_1 = require("../config/queue");
 function scheduleEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, senderEmail, subject, body, startTime, delayBetweenEmailsSeconds, recipients, _b, hourlyLimit, userId, batchId, i, jobId, scheduledAt, delayMs, bullJob, err_1;
+        var _a, subject, body, startTime, delayBetweenEmailsSeconds, recipients, _b, hourlyLimit, userId, batchId, userRows, senderEmail, i, jobId, scheduledAt, delayMs, bullJob, err_1;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 8, , 9]);
-                    _a = req.body, senderEmail = _a.senderEmail, subject = _a.subject, body = _a.body, startTime = _a.startTime, delayBetweenEmailsSeconds = _a.delayBetweenEmailsSeconds, recipients = _a.recipients, _b = _a.hourlyLimit, hourlyLimit = _b === void 0 ? 100 : _b;
+                    _c.trys.push([0, 9, , 10]);
+                    _a = req.body, subject = _a.subject, body = _a.body, startTime = _a.startTime, delayBetweenEmailsSeconds = _a.delayBetweenEmailsSeconds, recipients = _a.recipients, _b = _a.hourlyLimit, hourlyLimit = _b === void 0 ? 100 : _b;
                     if (!recipients || recipients.length === 0) {
                         return [2 /*return*/, res.status(400).json({ error: "No recipients provided" })];
                     }
                     userId = req.user.userId;
                     batchId = crypto_1.randomUUID();
+                    return [4 /*yield*/, db_1.db.query("\n      SELECT \n        email,\n        gmail_refresh_token\n      FROM users\n      WHERE id = $1\n      ", [userId])];
+                case 1:
+                    userRows = (_c.sent()).rows;
+                    if (userRows.length === 0 ||
+                        !userRows[0].gmail_refresh_token) {
+                        return [2 /*return*/, res.status(403).json({
+                                code: "GMAIL_NOT_CONNECTED",
+                                message: "Please connect your Gmail account first.",
+                                connectUrl: "/gmail/connect"
+                            })];
+                    }
+                    senderEmail = userRows[0].email;
                     return [4 /*yield*/, db_1.db.query("\n      INSERT INTO email_batches\n      (id, user_id, sender_email, subject, body, start_time,\n       delay_between_emails_seconds, hourly_limit, total_emails)\n      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\n      ", [
                             batchId,
                             userId,
@@ -64,40 +76,40 @@ function scheduleEmails(req, res) {
                             hourlyLimit,
                             recipients.length,
                         ])];
-                case 1:
+                case 2:
                     _c.sent();
                     i = 0;
-                    _c.label = 2;
-                case 2:
-                    if (!(i < recipients.length)) return [3 /*break*/, 7];
+                    _c.label = 3;
+                case 3:
+                    if (!(i < recipients.length)) return [3 /*break*/, 8];
                     jobId = crypto_1.randomUUID();
                     scheduledAt = new Date(new Date(startTime).getTime() +
                         i * delayBetweenEmailsSeconds * 1000);
                     return [4 /*yield*/, db_1.db.query("\n        INSERT INTO email_jobs\n        (id, batch_id, recipient_email, scheduled_at)\n        VALUES ($1,$2,$3,$4)\n        ", [jobId, batchId, recipients[i], scheduledAt])];
-                case 3:
+                case 4:
                     _c.sent();
                     delayMs = scheduledAt.getTime() - Date.now();
                     return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: jobId }, { delay: Math.max(delayMs, 0) })];
-                case 4:
+                case 5:
                     bullJob = _c.sent();
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2", [bullJob.id, jobId])];
-                case 5:
-                    _c.sent();
-                    _c.label = 6;
                 case 6:
+                    _c.sent();
+                    _c.label = 7;
+                case 7:
                     i++;
-                    return [3 /*break*/, 2];
-                case 7: return [2 /*return*/, res.json({
+                    return [3 /*break*/, 3];
+                case 8: return [2 /*return*/, res.json({
                         message: "Emails scheduled",
                         batchId: batchId,
                         total: recipients.length
                     })];
-                case 8:
+                case 9:
                     err_1 = _c.sent();
                     console.error("Schedule error:", err_1);
                     res.status(500).json({ error: "Failed to schedule emails" });
-                    return [3 /*break*/, 9];
-                case 9: return [2 /*return*/];
+                    return [3 /*break*/, 10];
+                case 10: return [2 /*return*/];
             }
         });
     });

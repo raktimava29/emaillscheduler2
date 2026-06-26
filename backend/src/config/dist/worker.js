@@ -63,7 +63,7 @@ function startWorker() {
         maxRetriesPerRequest: null
     });
     var worker = new bullmq_1.Worker("email-queue", function (job) { return __awaiter(_this, void 0, void 0, function () {
-        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, i, err_1, err_2;
+        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, subject, body, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, i, err_1, err_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -76,12 +76,12 @@ function startWorker() {
                     emailJob = jobRows[0];
                     if (emailJob.status !== "scheduled")
                         return [2 /*return*/];
-                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.sender_email,\n          b.hourly_limit,\n          u.gmail_refresh_token\n        FROM email_batches b\n        JOIN users u\n          ON b.user_id = u.id\n        WHERE b.id = $1\n        ", [emailJob.batch_id])];
+                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.sender_email,\n          b.subject,\n          b.body,\n          b.hourly_limit,\n          u.gmail_refresh_token\n      FROM email_batches b\n      JOIN users u\n      ON b.user_id = u.id\n      WHERE b.id = $1\n        ", [emailJob.batch_id])];
                 case 2:
                     batchRows = (_b.sent()).rows;
                     if (batchRows.length === 0)
                         return [2 /*return*/];
-                    _a = batchRows[0], sender_email = _a.sender_email, hourly_limit = _a.hourly_limit, gmail_refresh_token = _a.gmail_refresh_token;
+                    _a = batchRows[0], sender_email = _a.sender_email, subject = _a.subject, body = _a.body, hourly_limit = _a.hourly_limit, gmail_refresh_token = _a.gmail_refresh_token;
                     if (!gmail_refresh_token) {
                         throw new Error("User has not connected Gmail.");
                     }
@@ -125,8 +125,8 @@ function startWorker() {
                     return [4 /*yield*/, gmail_service_1.sendEmail({
                             from: sender_email,
                             to: emailJob.recipient_email,
-                            subject: "Scheduled Email",
-                            text: "Hello from Email Scheduler",
+                            subject: subject,
+                            text: body,
                             refreshToken: gmail_refresh_token
                         })];
                 case 13:
