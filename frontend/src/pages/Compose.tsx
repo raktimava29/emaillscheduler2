@@ -74,10 +74,7 @@ export default function Compose() {
 
     setIsSending(true);
     try {
-      console.log({
-        scheduledTime,
-        startTime: scheduledTime ?? new Date().toISOString(),
-      });
+      
       await apiFetch("/emails/schedule", {
         method: "POST",
         body: JSON.stringify({

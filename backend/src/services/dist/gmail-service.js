@@ -47,15 +47,9 @@ function sendEmail(_a) {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
-                    console.log("========== Gmail Send Started ==========");
-                    console.log("From:", from);
-                    console.log("To:", to);
-                    console.log("Subject:", subject);
-                    console.log("Setting OAuth credentials...");
                     gmail_1.oauth2Client.setCredentials({
                         refresh_token: refreshToken
                     });
-                    console.log("Creating Gmail client...");
                     gmail = googleapis_1.google.gmail({
                         version: "v1",
                         auth: gmail_1.oauth2Client
@@ -74,7 +68,6 @@ function sendEmail(_a) {
                         .replace(/\+/g, "-")
                         .replace(/\//g, "_")
                         .replace(/=+$/, "");
-                    console.log("Calling Gmail API...");
                     return [4 /*yield*/, gmail.users.messages.send({
                             userId: "me",
                             requestBody: {
@@ -83,10 +76,6 @@ function sendEmail(_a) {
                         })];
                 case 1:
                     response = _b.sent();
-                    console.log("Gmail API Success");
-                    console.log("Message ID:", response.data.id);
-                    console.log("Thread ID:", response.data.threadId);
-                    console.log("========== Gmail Send Finished ==========");
                     return [2 /*return*/, response.data];
                 case 2:
                     error_1 = _b.sent();

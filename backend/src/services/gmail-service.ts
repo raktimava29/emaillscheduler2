@@ -17,18 +17,9 @@ export async function sendEmail({
   refreshToken,
 }: SendEmailParams) {
   try {
-    console.log("========== Gmail Send Started ==========");
-    console.log("From:", from);
-    console.log("To:", to);
-    console.log("Subject:", subject);
-
-    console.log("Setting OAuth credentials...");
-
     oauth2Client.setCredentials({
       refresh_token: refreshToken,
     });
-
-    console.log("Creating Gmail client...");
 
     const gmail = google.gmail({
       version: "v1",
@@ -51,19 +42,12 @@ export async function sendEmail({
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
-    console.log("Calling Gmail API...");
-
     const response = await gmail.users.messages.send({
       userId: "me",
       requestBody: {
         raw,
       },
     });
-
-    console.log("Gmail API Success");
-    console.log("Message ID:", response.data.id);
-    console.log("Thread ID:", response.data.threadId);
-    console.log("========== Gmail Send Finished ==========");
 
     return response.data;
   } catch (error) {

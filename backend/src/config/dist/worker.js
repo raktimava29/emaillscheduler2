@@ -68,13 +68,6 @@ function startWorker() {
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    console.log("================================");
-                    console.log("Worker picked up a job");
-                    console.log("Current time:", new Date().toISOString());
-                    console.log("Bull Job ID:", job.id);
-                    console.log("Email Job ID:", job.data.emailJobId);
-                    console.log("Attempts made:", job.attemptsMade);
-                    console.log("================================");
                     emailJobId = job.data.emailJobId;
                     return [4 /*yield*/, db_1.db.query("SELECT * FROM email_jobs WHERE id = $1", [emailJobId])];
                 case 1:
@@ -120,7 +113,6 @@ function startWorker() {
                     lock = _c.sent();
                     if (lock.rowCount === 0)
                         return [2 /*return*/];
-                    console.log("Processing email " + emailJob.id + " -> " + emailJob.recipient_email);
                     _c.label = 10;
                 case 10:
                     _c.trys.push([10, 13, , 16]);
@@ -136,7 +128,6 @@ function startWorker() {
                     return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'sent',\n              sent_at = NOW()\n          WHERE id = $1\n          ", [emailJob.id])];
                 case 12:
                     _c.sent();
-                    console.log("Email " + emailJob.id + " sent successfully");
                     return [3 /*break*/, 16];
                 case 13:
                     err_1 = _c.sent();

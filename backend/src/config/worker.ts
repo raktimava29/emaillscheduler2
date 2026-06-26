@@ -31,13 +31,7 @@ export function startWorker() {
   const worker = new Worker(
     "email-queue",
     async (job) => {
-      console.log("================================");
-    console.log("Worker picked up a job");
-    console.log("Current time:", new Date().toISOString());
-    console.log("Bull Job ID:", job.id);
-    console.log("Email Job ID:", job.data.emailJobId);
-    console.log("Attempts made:", job.attemptsMade);
-    console.log("================================");
+
       const { emailJobId } = job.data;
 
       const { rows: jobRows } = await db.query(
@@ -121,10 +115,6 @@ export function startWorker() {
 
       if (lock.rowCount === 0) return;
 
-      console.log(
-        `Processing email ${emailJob.id} -> ${emailJob.recipient_email}`
-      );
-
       try {
         await sendEmail({
           from: sender_email,
@@ -144,7 +134,6 @@ export function startWorker() {
           [emailJob.id]
         );
 
-        console.log(`Email ${emailJob.id} sent successfully`);
       } catch (err) {
         console.error(`Email ${emailJob.id} attempt failed`);
 

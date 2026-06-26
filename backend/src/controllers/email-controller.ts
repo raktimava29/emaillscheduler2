@@ -66,8 +66,6 @@ export async function scheduleEmails(req: Request, res: Response) {
     );
 
     //Create jobs and schedule BullMQ
-    console.log("Client startTime:", startTime);
-    console.log("Server now:", new Date().toISOString());
     for (let i = 0; i < recipients.length; i++) {
       const jobId = randomUUID();
 
@@ -85,17 +83,13 @@ export async function scheduleEmails(req: Request, res: Response) {
         [jobId, batchId, recipients[i], scheduledAt]
       );
 
-      const delayMs = scheduledAt.getTime() - Date.now();
-
+      const delayMs = Math.max(scheduledAt.getTime() - Date.now(), 0);
+              
       const bullJob = await emailQueue.add(
         "send-email",
         { emailJobId: jobId },
         { delay: Math.max(delayMs, 0) }
       );
-      console.log("Job queued");
-      console.log("Delay(ms):", delayMs);
-      console.log("Scheduled for:", scheduledAt.toISOString());
-      console.log("Bull Job ID:", bullJob.id);
 
       await db.query(
         "UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2",
