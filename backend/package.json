@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node src/server.ts",
+    "start": "node dist/erver.ts",
     "worker": "node dist/worker.js",
     "dev": "ts-node-dev --respawn src/server.ts"
   },
