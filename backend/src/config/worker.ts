@@ -31,6 +31,13 @@ export function startWorker() {
   const worker = new Worker(
     "email-queue",
     async (job) => {
+      console.log("================================");
+    console.log("Worker picked up a job");
+    console.log("Current time:", new Date().toISOString());
+    console.log("Bull Job ID:", job.id);
+    console.log("Email Job ID:", job.data.emailJobId);
+    console.log("Attempts made:", job.attemptsMade);
+    console.log("================================");
       const { emailJobId } = job.data;
 
       const { rows: jobRows } = await db.query(
@@ -95,7 +102,7 @@ export function startWorker() {
           "send-email",
           { emailJobId: emailJob.id },
           {
-            delay: nextRun.getTime() - Date.now(),
+            delay: Math.max(nextRun.getTime() - Date.now(), 0),
           }
         );
 
@@ -119,32 +126,13 @@ export function startWorker() {
       );
 
       try {
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            await sendEmail({
-              from: sender_email,
-              to: emailJob.recipient_email,
-              subject,
-              text: body,
-              refreshToken: gmail_refresh_token,
-            });
-
-            break;
-          } catch (err) {
-            console.error(
-              `Attempt ${attempt} failed for job ${emailJob.id}:`,
-              err
-            );
-
-            if (attempt === 3) {
-              throw err;
-            }
-
-            await new Promise((resolve) =>
-              setTimeout(resolve, 2000)
-            );
-          }
-        }
+        await sendEmail({
+          from: sender_email,
+          to: emailJob.recipient_email,
+          subject,
+          text: body,
+          refreshToken: gmail_refresh_token,
+        });
 
         await db.query(
           `
@@ -158,20 +146,25 @@ export function startWorker() {
 
         console.log(`Email ${emailJob.id} sent successfully`);
       } catch (err) {
-        console.error(`Email ${emailJob.id} failed:`, err);
+        console.error(`Email ${emailJob.id} attempt failed`);
 
-        await db.query(
-          `
-          UPDATE email_jobs
-          SET status = 'failed',
-              error_message = $2
-          WHERE id = $1
-          `,
-          [
-            emailJob.id,
-            err instanceof Error ? err.message : "Unknown error",
-          ]
-        );
+        // Only mark permanently failed after BullMQ has exhausted retries.
+        if (job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
+          await db.query(
+            `
+            UPDATE email_jobs
+            SET status = 'failed',
+                error_message = $2
+            WHERE id = $1
+            `,
+            [
+              emailJob.id,
+              err instanceof Error ? err.message : "Unknown error",
+            ]
+          );
+
+          console.error(`Email ${emailJob.id} permanently failed`);
+        }
 
         throw err;
       }
@@ -187,7 +180,7 @@ export function startWorker() {
   });
 
   worker.on("failed", (job, err) => {
-    console.error(`Job ${job?.id} failed:`, err.message);
+    console.error(`Job ${job?.id} failed: ${err.message}`);
   });
 
   worker.on("error", (err) => {

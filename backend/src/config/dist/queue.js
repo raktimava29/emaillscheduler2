@@ -11,6 +11,11 @@ exports.redis = new ioredis_1["default"](process.env.REDIS_URL, {
 exports.emailQueue = new bullmq_1.Queue("email-queue", {
     connection: exports.redis,
     defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+            type: "exponential",
+            delay: 2000
+        },
         removeOnComplete: false,
         removeOnFail: false
     }

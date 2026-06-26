@@ -95,6 +95,10 @@ function scheduleEmails(req, res) {
                     return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: jobId }, { delay: Math.max(delayMs, 0) })];
                 case 5:
                     bullJob = _c.sent();
+                    console.log("Job queued");
+                    console.log("Delay(ms):", delayMs);
+                    console.log("Scheduled for:", scheduledAt.toISOString());
+                    console.log("Bull Job ID:", bullJob.id);
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2", [bullJob.id, jobId])];
                 case 6:
                     _c.sent();

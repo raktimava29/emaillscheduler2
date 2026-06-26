@@ -11,6 +11,11 @@ export const redis = new IORedis(process.env.REDIS_URL!, {
 export const emailQueue = new Queue("email-queue", {
   connection: redis,
   defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 2000,
+    },
     removeOnComplete: false,
     removeOnFail: false,
   },

@@ -92,6 +92,10 @@ export async function scheduleEmails(req: Request, res: Response) {
         { emailJobId: jobId },
         { delay: Math.max(delayMs, 0) }
       );
+      console.log("Job queued");
+      console.log("Delay(ms):", delayMs);
+      console.log("Scheduled for:", scheduledAt.toISOString());
+      console.log("Bull Job ID:", bullJob.id);
 
       await db.query(
         "UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2",
