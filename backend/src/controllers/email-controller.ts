@@ -66,6 +66,8 @@ export async function scheduleEmails(req: Request, res: Response) {
     );
 
     //Create jobs and schedule BullMQ
+    console.log("Client startTime:", startTime);
+    console.log("Server now:", new Date().toISOString());
     for (let i = 0; i < recipients.length; i++) {
       const jobId = randomUUID();
 

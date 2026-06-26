@@ -1,5 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_URL;
 
+interface ApiError extends Error {
+  code?: string;
+  status?: number;
+}
+
 export async function apiFetch(
   path: string,
   options: RequestInit = {}
@@ -23,9 +28,13 @@ export async function apiFetch(
   }
 
   if (!res.ok) {
-    const error: any = new Error(data?.message || data?.error || "API error");
+    const error: ApiError = new Error(
+      data?.message || data?.error || "API error"
+    );
+
     error.code = data?.code;
     error.status = res.status;
+
     throw error;
   }
 

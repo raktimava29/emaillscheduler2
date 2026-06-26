@@ -63,7 +63,7 @@ function startWorker() {
         maxRetriesPerRequest: null
     });
     var worker = new bullmq_1.Worker("email-queue", function (job) { return __awaiter(_this, void 0, void 0, function () {
-        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, subject, body, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, i, err_1, err_2;
+        var emailJobId, jobRows, emailJob, batchRows, _a, sender_email, subject, body, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, attempt, err_1, err_2;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -76,7 +76,7 @@ function startWorker() {
                     emailJob = jobRows[0];
                     if (emailJob.status !== "scheduled")
                         return [2 /*return*/];
-                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.sender_email,\n          b.subject,\n          b.body,\n          b.hourly_limit,\n          u.gmail_refresh_token\n      FROM email_batches b\n      JOIN users u\n      ON b.user_id = u.id\n      WHERE b.id = $1\n        ", [emailJob.batch_id])];
+                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.sender_email,\n          b.subject,\n          b.body,\n          b.hourly_limit,\n          u.gmail_refresh_token\n        FROM email_batches b\n        JOIN users u\n          ON b.user_id = u.id\n        WHERE b.id = $1\n        ", [emailJob.batch_id])];
                 case 2:
                     batchRows = (_b.sent()).rows;
                     if (batchRows.length === 0)
@@ -112,17 +112,17 @@ function startWorker() {
                     lock = _b.sent();
                     if (lock.rowCount === 0)
                         return [2 /*return*/];
+                    console.log("Processing email " + emailJob.id + " -> " + emailJob.recipient_email);
                     _b.label = 10;
                 case 10:
                     _b.trys.push([10, 19, , 21]);
-                    i = 1;
+                    attempt = 1;
                     _b.label = 11;
                 case 11:
-                    if (!(i <= 3)) return [3 /*break*/, 17];
+                    if (!(attempt <= 3)) return [3 /*break*/, 17];
                     _b.label = 12;
                 case 12:
                     _b.trys.push([12, 14, , 16]);
-                    console.log("Starting sendEmail");
                     return [4 /*yield*/, gmail_service_1.sendEmail({
                             from: sender_email,
                             to: emailJob.recipient_email,
@@ -132,12 +132,11 @@ function startWorker() {
                         })];
                 case 13:
                     _b.sent();
-                    console.log("Finished sendEmail");
                     return [3 /*break*/, 17];
                 case 14:
                     err_1 = _b.sent();
-                    console.log("Retry " + i);
-                    if (i === 3) {
+                    console.error("Attempt " + attempt + " failed for job " + emailJob.id + ":", err_1);
+                    if (attempt === 3) {
                         throw err_1;
                     }
                     return [4 /*yield*/, new Promise(function (resolve) {
@@ -147,15 +146,16 @@ function startWorker() {
                     _b.sent();
                     return [3 /*break*/, 16];
                 case 16:
-                    i++;
+                    attempt++;
                     return [3 /*break*/, 11];
                 case 17: return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'sent',\n              sent_at = NOW()\n          WHERE id = $1\n          ", [emailJob.id])];
                 case 18:
                     _b.sent();
+                    console.log("Email " + emailJob.id + " sent successfully");
                     return [3 /*break*/, 21];
                 case 19:
                     err_2 = _b.sent();
-                    console.error("sendEmail failed:", err_2);
+                    console.error("Email " + emailJob.id + " failed:", err_2);
                     return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'failed',\n              error_message = $2\n          WHERE id = $1\n          ", [
                             emailJob.id,
                             err_2 instanceof Error ? err_2.message : "Unknown error",
@@ -170,9 +170,15 @@ function startWorker() {
         connection: redis,
         concurrency: 5
     });
-    worker.on("failed", function (job, err) {
-        console.error("Job failed:", job === null || job === void 0 ? void 0 : job.id, err.message);
+    worker.on("completed", function (job) {
+        console.log("Job " + job.id + " completed");
     });
-    console.log("Worker started");
+    worker.on("failed", function (job, err) {
+        console.error("Job " + (job === null || job === void 0 ? void 0 : job.id) + " failed:", err.message);
+    });
+    worker.on("error", function (err) {
+        console.error("Worker error:", err);
+    });
+    console.log("BullMQ worker started");
 }
 exports.startWorker = startWorker;

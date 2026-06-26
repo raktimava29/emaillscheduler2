@@ -78,6 +78,9 @@ function scheduleEmails(req, res) {
                         ])];
                 case 2:
                     _c.sent();
+                    //Create jobs and schedule BullMQ
+                    console.log("Client startTime:", startTime);
+                    console.log("Server now:", new Date().toISOString());
                     i = 0;
                     _c.label = 3;
                 case 3:
