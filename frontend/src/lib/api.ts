@@ -23,7 +23,10 @@ export async function apiFetch(
   }
 
   if (!res.ok) {
-    throw new Error(data?.error || "API error");
+    const error: any = new Error(data?.message || data?.error || "API error");
+    error.code = data?.code;
+    error.status = res.status;
+    throw error;
   }
 
   return data;

@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch } from "../lib/api";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { apiFetch, redirect } from "../lib/api";
 
 export default function Compose() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
@@ -12,6 +13,11 @@ export default function Compose() {
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    avatar_url: string | null;
+  } | null>(null);
 
   const handleAttach = (file: File | null) => {
     if (!file) return;
@@ -21,6 +27,23 @@ export default function Compose() {
   const removeAttachment = () => {
     setAttachment(null);
   };
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const data = await apiFetch("/auth/me");
+        setProfile(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadProfile();
+
+    if (searchParams.get("gmail") === "connected") {
+      alert("✅ Gmail connected successfully.");
+    }
+  }, [searchParams]);
 
   const selectPreset = (hoursFromNow: number) => {
     const date = new Date();
@@ -54,7 +77,6 @@ export default function Compose() {
       await apiFetch("/emails/schedule", {
         method: "POST",
         body: JSON.stringify({
-          senderEmail: "no-reply@ong.app",
           subject,
           body,
           startTime: scheduledTime ?? new Date().toISOString(),
@@ -70,11 +92,23 @@ export default function Compose() {
       );
 
       navigate("/dashboard");
-    } catch (err) {
-      alert("Failed to schedule emails");
-      console.error(err);
-      setIsSending(false);
-    }
+    } catch (err: unknown) {
+        setIsSending(false);
+
+        if (
+          err instanceof Error &&
+          (err as Error & { code?: string }).code === "GMAIL_NOT_CONNECTED"
+        ) {
+          redirect("/gmail/connect");
+          return;
+        }
+
+        alert(
+          err instanceof Error
+            ? err.message
+            : "Failed to schedule emails"
+        );
+      }
   };
 
   const formatScheduledTime = () => {
@@ -95,6 +129,7 @@ export default function Compose() {
         <div className="flex items-center justify-between border-b border-gray-200/80 bg-white/90 backdrop-blur-md px-8 py-5">
           <div className="flex items-center gap-4">
             <button
+              aria-label="go-back"
               onClick={() => navigate(-1)}
               className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-gray-100 transition-all duration-200"
             >
@@ -116,6 +151,7 @@ export default function Compose() {
               </svg>
               <input
                 type="file"
+                aria-label="Attach File"
                 hidden
                 onChange={(e) => handleAttach(e.target.files?.[0] ?? null)}
               />
@@ -123,6 +159,7 @@ export default function Compose() {
 
             {/* Schedule Button */}
             <button
+              aria-label="showScheduler"
               onClick={() => setShowScheduler((p) => !p)}
               className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
                 showScheduler || scheduledTime
@@ -172,6 +209,7 @@ export default function Compose() {
                 Scheduled for {formatScheduledTime()}
               </span>
               <button
+                aria-label="cancelSchedule"
                 onClick={cancelSchedule}
                 className="ml-2 text-emerald-600 hover:text-emerald-800"
               >
@@ -189,12 +227,13 @@ export default function Compose() {
             {/* From Field */}
             <div className="flex items-center gap-4">
               <label className="w-20 text-sm font-medium text-gray-600">From</label>
-              <select
-                title="Sender email"
-                className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-              >
-                <option>no-reply@ong.app</option>
-              </select>
+              <input
+                type="email"
+                aria-label="email"
+                value={profile?.email ?? ""}
+                readOnly
+                className="flex-1 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 cursor-not-allowed"
+              />
             </div>
 
             {/* To Field */}
@@ -203,6 +242,7 @@ export default function Compose() {
               <div className="flex-1">
                 <input
                   value={to}
+                  aria-label="multiple-emails"
                   onChange={(e) => setTo(e.target.value)}
                   placeholder="recipient@example.com, another@example.com"
                   className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
@@ -216,6 +256,7 @@ export default function Compose() {
               <label className="w-20 text-sm font-medium text-gray-600">Subject</label>
               <input
                 value={subject}
+                aria-label="subject-body"
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Email subject"
                 className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
@@ -230,6 +271,7 @@ export default function Compose() {
                 </svg>
                 <span className="flex-1 text-sm text-gray-700 truncate">{attachment.name}</span>
                 <button
+                  aria-label="removeAttachment"
                   onClick={removeAttachment}
                   className="text-gray-500 hover:text-red-600 transition-colors"
                 >
