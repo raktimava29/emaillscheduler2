@@ -42,13 +42,20 @@ var gmail_1 = require("../config/gmail");
 function sendEmail(_a) {
     var from = _a.from, to = _a.to, subject = _a.subject, text = _a.text, refreshToken = _a.refreshToken;
     return __awaiter(this, void 0, void 0, function () {
-        var gmail, message, encodedMessage;
+        var gmail, message, raw, response, error_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    console.log("========== Gmail Send Started ==========");
+                    console.log("From:", from);
+                    console.log("To:", to);
+                    console.log("Subject:", subject);
+                    console.log("Setting OAuth credentials...");
                     gmail_1.oauth2Client.setCredentials({
                         refresh_token: refreshToken
                     });
+                    console.log("Creating Gmail client...");
                     gmail = googleapis_1.google.gmail({
                         version: "v1",
                         auth: gmail_1.oauth2Client
@@ -61,21 +68,33 @@ function sendEmail(_a) {
                         "Content-Type: text/plain; charset=UTF-8",
                         "",
                         text,
-                    ].join("\n");
-                    encodedMessage = Buffer.from(message)
+                    ].join("\r\n");
+                    raw = Buffer.from(message)
                         .toString("base64")
                         .replace(/\+/g, "-")
                         .replace(/\//g, "_")
                         .replace(/=+$/, "");
+                    console.log("Calling Gmail API...");
                     return [4 /*yield*/, gmail.users.messages.send({
                             userId: "me",
                             requestBody: {
-                                raw: encodedMessage
+                                raw: raw
                             }
                         })];
                 case 1:
-                    _b.sent();
-                    return [2 /*return*/];
+                    response = _b.sent();
+                    console.log("Gmail API Success");
+                    console.log("Message ID:", response.data.id);
+                    console.log("Thread ID:", response.data.threadId);
+                    console.log("========== Gmail Send Finished ==========");
+                    return [2 /*return*/, response.data];
+                case 2:
+                    error_1 = _b.sent();
+                    console.error("========== Gmail API Error ==========");
+                    console.error(error_1);
+                    console.error("======================================");
+                    throw error_1;
+                case 3: return [2 /*return*/];
             }
         });
     });

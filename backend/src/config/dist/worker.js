@@ -122,6 +122,7 @@ function startWorker() {
                     _b.label = 12;
                 case 12:
                     _b.trys.push([12, 14, , 16]);
+                    console.log("Starting sendEmail");
                     return [4 /*yield*/, gmail_service_1.sendEmail({
                             from: sender_email,
                             to: emailJob.recipient_email,
@@ -131,6 +132,7 @@ function startWorker() {
                         })];
                 case 13:
                     _b.sent();
+                    console.log("Finished sendEmail");
                     return [3 /*break*/, 17];
                 case 14:
                     err_1 = _b.sent();
