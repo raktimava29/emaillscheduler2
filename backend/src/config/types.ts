@@ -37,3 +37,9 @@ export interface EmailJob {
   bull_job_id?: string;
   created_at: Date;
 }
+
+export interface UploadedFile {
+    buffer: Buffer;
+    mimetype: string;
+    originalname: string;
+}

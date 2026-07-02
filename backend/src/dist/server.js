@@ -46,6 +46,7 @@ var login_router_1 = require("./routers/login-router");
 var worker_1 = require("./config/worker");
 var security_1 = require("./config/security");
 var gmail_router_1 = require("./routers/gmail-router");
+var jobParser_router_1 = require("./routers/jobParser-router");
 dotenv_1["default"].config();
 var app = express_1["default"]();
 app.use(cors_1["default"]({
@@ -70,6 +71,7 @@ app.get("/", function (_req, res) { return __awaiter(void 0, void 0, void 0, fun
 }); });
 app.use("/emails", email_router_1["default"]);
 app.use("/auth", login_router_1["default"]);
+app.use("/ai", jobParser_router_1["default"]);
 var PORT = process.env.PORT || 4000;
 app.listen(PORT, function () {
     console.log("Server running on port " + PORT);

@@ -8,6 +8,7 @@ import authRoutes from "./routers/login-router";
 import { startWorker } from "./config/worker";
 import { allowedOrigins, requireTrustedOrigin } from "./config/security";
 import gmailRouter from "./routers/gmail-router"
+import jobParserRoutes from "./routers/jobParser-router";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.get("/", async (_req, res) => {
 
 app.use("/emails", emailRoutes);
 app.use("/auth", authRoutes);
+app.use("/ai", jobParserRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
