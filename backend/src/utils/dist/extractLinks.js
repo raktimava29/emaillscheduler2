@@ -36,46 +36,27 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-var express_1 = require("express");
-var cors_1 = require("cors");
-var dotenv_1 = require("dotenv");
-var email_router_1 = require("./routers/email-router");
-var db_1 = require("./config/db");
-var passport_1 = require("./config/passport");
-var login_router_1 = require("./routers/login-router");
-var worker_1 = require("./config/worker");
-var security_1 = require("./config/security");
-var gmail_router_1 = require("./routers/gmail-router");
-var jobParser_router_1 = require("./routers/jobParser-router");
-var resume_router_1 = require("./routers/resume-router");
-dotenv_1["default"].config();
-var app = express_1["default"]();
-app.use(cors_1["default"]({
-    origin: security_1.allowedOrigins,
-    credentials: true
-}));
-app.use(express_1["default"].json());
-app.use(security_1.requireTrustedOrigin);
-app.use(passport_1["default"].initialize());
-app.use("/gmail", gmail_router_1["default"]);
-app.get("/", function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var rows;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, db_1.db.query("SELECT 'API running' AS msg")];
-            case 1:
-                rows = (_a.sent()).rows;
-                res.json(rows);
-                return [2 /*return*/];
-        }
+exports.extractLinks = void 0;
+function extractLinks(page) {
+    return __awaiter(this, void 0, Promise, function () {
+        var annotations, links, _i, annotations_1, annotation;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, page.getAnnotations()];
+                case 1:
+                    annotations = _a.sent();
+                    links = [];
+                    for (_i = 0, annotations_1 = annotations; _i < annotations_1.length; _i++) {
+                        annotation = annotations_1[_i];
+                        if (annotation.subtype === "Link" && "url" in annotation && annotation.url) {
+                            links.push({
+                                url: annotation.url
+                            });
+                        }
+                    }
+                    return [2 /*return*/, links];
+            }
+        });
     });
-}); });
-app.use("/emails", email_router_1["default"]);
-app.use("/auth", login_router_1["default"]);
-app.use("/ai", jobParser_router_1["default"]);
-app.use("/ai", resume_router_1["default"]);
-var PORT = process.env.PORT || 4000;
-app.listen(PORT, function () {
-    console.log("Server running on port " + PORT);
-    worker_1.startWorker();
-});
+}
+exports.extractLinks = extractLinks;

@@ -36,46 +36,44 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-var express_1 = require("express");
-var cors_1 = require("cors");
-var dotenv_1 = require("dotenv");
-var email_router_1 = require("./routers/email-router");
-var db_1 = require("./config/db");
-var passport_1 = require("./config/passport");
-var login_router_1 = require("./routers/login-router");
-var worker_1 = require("./config/worker");
-var security_1 = require("./config/security");
-var gmail_router_1 = require("./routers/gmail-router");
-var jobParser_router_1 = require("./routers/jobParser-router");
-var resume_router_1 = require("./routers/resume-router");
-dotenv_1["default"].config();
-var app = express_1["default"]();
-app.use(cors_1["default"]({
-    origin: security_1.allowedOrigins,
-    credentials: true
-}));
-app.use(express_1["default"].json());
-app.use(security_1.requireTrustedOrigin);
-app.use(passport_1["default"].initialize());
-app.use("/gmail", gmail_router_1["default"]);
-app.get("/", function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var rows;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, db_1.db.query("SELECT 'API running' AS msg")];
-            case 1:
-                rows = (_a.sent()).rows;
-                res.json(rows);
-                return [2 /*return*/];
-        }
+exports.resumeParserController = void 0;
+var documentParser_1 = require("../utils/documentParser");
+var extractSections_1 = require("../utils/extractSections");
+var resume_service_1 = require("../services/resume-service");
+var errors_1 = require("../utils/errors");
+function resumeParserController(req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var document, sections, result, err_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, documentParser_1.parseDocument(req.body.resumeText, req.file)];
+                case 1:
+                    document = _a.sent();
+                    sections = extractSections_1.extractSections(document.text);
+                    return [4 /*yield*/, resume_service_1.parseResume(document.text, sections, document.links)];
+                case 2:
+                    result = _a.sent();
+                    return [2 /*return*/, res.json(result)];
+                case 3:
+                    err_1 = _a.sent();
+                    if (err_1 instanceof errors_1.AIError) {
+                        return [2 /*return*/, res.status(err_1.statusCode).json({
+                                success: false,
+                                code: err_1.code,
+                                message: err_1.message
+                            })];
+                    }
+                    console.error(err_1);
+                    return [2 /*return*/, res.status(500).json({
+                            success: false,
+                            code: "AI_ERROR",
+                            message: "Something went wrong."
+                        })];
+                case 4: return [2 /*return*/];
+            }
+        });
     });
-}); });
-app.use("/emails", email_router_1["default"]);
-app.use("/auth", login_router_1["default"]);
-app.use("/ai", jobParser_router_1["default"]);
-app.use("/ai", resume_router_1["default"]);
-var PORT = process.env.PORT || 4000;
-app.listen(PORT, function () {
-    console.log("Server running on port " + PORT);
-    worker_1.startWorker();
-});
+}
+exports.resumeParserController = resumeParserController;

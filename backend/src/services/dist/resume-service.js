@@ -36,46 +36,36 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-var express_1 = require("express");
-var cors_1 = require("cors");
-var dotenv_1 = require("dotenv");
-var email_router_1 = require("./routers/email-router");
-var db_1 = require("./config/db");
-var passport_1 = require("./config/passport");
-var login_router_1 = require("./routers/login-router");
-var worker_1 = require("./config/worker");
-var security_1 = require("./config/security");
-var gmail_router_1 = require("./routers/gmail-router");
-var jobParser_router_1 = require("./routers/jobParser-router");
-var resume_router_1 = require("./routers/resume-router");
-dotenv_1["default"].config();
-var app = express_1["default"]();
-app.use(cors_1["default"]({
-    origin: security_1.allowedOrigins,
-    credentials: true
-}));
-app.use(express_1["default"].json());
-app.use(security_1.requireTrustedOrigin);
-app.use(passport_1["default"].initialize());
-app.use("/gmail", gmail_router_1["default"]);
-app.get("/", function (_req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var rows;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, db_1.db.query("SELECT 'API running' AS msg")];
-            case 1:
-                rows = (_a.sent()).rows;
-                res.json(rows);
-                return [2 /*return*/];
-        }
+exports.parseResume = void 0;
+var client_1 = require("../client");
+var resume_prompt_1 = require("../prompts/resume-prompt");
+var resume_schema_1 = require("../schemas/resume-schema");
+function parseResume(rawText, sections, links) {
+    var _a;
+    return __awaiter(this, void 0, Promise, function () {
+        var completion, content, parsed;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0: return [4 /*yield*/, client_1.groq.chat.completions.create({
+                        model: "llama-3.3-70b-versatile",
+                        temperature: 0,
+                        response_format: {
+                            type: "json_object"
+                        },
+                        messages: [
+                            {
+                                role: "user",
+                                content: resume_prompt_1.buildResumeParserPrompt(rawText, sections, links)
+                            }
+                        ]
+                    })];
+                case 1:
+                    completion = _b.sent();
+                    content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
+                    parsed = JSON.parse(content);
+                    return [2 /*return*/, resume_schema_1.ResumeParserResponseSchema.parse(parsed)];
+            }
+        });
     });
-}); });
-app.use("/emails", email_router_1["default"]);
-app.use("/auth", login_router_1["default"]);
-app.use("/ai", jobParser_router_1["default"]);
-app.use("/ai", resume_router_1["default"]);
-var PORT = process.env.PORT || 4000;
-app.listen(PORT, function () {
-    console.log("Server running on port " + PORT);
-    worker_1.startWorker();
-});
+}
+exports.parseResume = parseResume;

@@ -40,36 +40,74 @@ exports.parseDocument = void 0;
 var pdf_mjs_1 = require("pdfjs-dist/legacy/build/pdf.mjs");
 var errors_1 = require("./errors");
 var cleanText_1 = require("./cleanText");
-function extractPdfText(buffer) {
+var extractLinks_1 = require("./extractLinks");
+function detectLabel(url) {
+    var value = url.toLowerCase();
+    if (value.includes("github")) {
+        return "GitHub";
+    }
+    if (value.includes("linkedin")) {
+        return "LinkedIn";
+    }
+    if (value.includes("leetcode")) {
+        return "LeetCode";
+    }
+    if (value.includes("codeforces")) {
+        return "Codeforces";
+    }
+    if (value.includes("portfolio")) {
+        return "Portfolio";
+    }
+    return undefined;
+}
+function extractPdfContent(buffer) {
+    var _a;
     return __awaiter(this, void 0, Promise, function () {
-        var pdf, text, pageNo, page, content, pageText;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var pdf, text, links, pageNo, page, _b, _c, _d, content, pageText, visibleLinks, _loop_1, _i, visibleLinks_1, url;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0: return [4 /*yield*/, pdf_mjs_1.getDocument({
                         data: new Uint8Array(buffer)
                     }).promise];
                 case 1:
-                    pdf = _a.sent();
+                    pdf = _e.sent();
                     text = "";
+                    links = [];
                     pageNo = 1;
-                    _a.label = 2;
+                    _e.label = 2;
                 case 2:
-                    if (!(pageNo <= pdf.numPages)) return [3 /*break*/, 6];
+                    if (!(pageNo <= pdf.numPages)) return [3 /*break*/, 7];
                     return [4 /*yield*/, pdf.getPage(pageNo)];
                 case 3:
-                    page = _a.sent();
-                    return [4 /*yield*/, page.getTextContent()];
+                    page = _e.sent();
+                    _c = (_b = links.push).apply;
+                    _d = [links];
+                    return [4 /*yield*/, extractLinks_1.extractLinks(page)];
                 case 4:
-                    content = _a.sent();
+                    _c.apply(_b, _d.concat([_e.sent()]));
+                    return [4 /*yield*/, page.getTextContent()];
+                case 5:
+                    content = _e.sent();
                     pageText = content.items
                         .map(function (item) { return item.str; })
                         .join(" ");
                     text += pageText + "\n";
-                    _a.label = 5;
-                case 5:
+                    _e.label = 6;
+                case 6:
                     pageNo++;
                     return [3 /*break*/, 2];
-                case 6: return [2 /*return*/, text];
+                case 7:
+                    visibleLinks = (_a = text.match(/(https?:\/\/[^\s]+|www\.[^\s]+|(?:github|linkedin|leetcode|codeforces)\.com\/[^\s]+)/gi)) !== null && _a !== void 0 ? _a : [];
+                    _loop_1 = function (url) {
+                        if (!links.some(function (link) { return link.url === url; })) {
+                            links.push({ url: url, label: detectLabel(url) });
+                        }
+                    };
+                    for (_i = 0, visibleLinks_1 = visibleLinks; _i < visibleLinks_1.length; _i++) {
+                        url = visibleLinks_1[_i];
+                        _loop_1(url);
+                    }
+                    return [2 /*return*/, { text: text, links: links }];
             }
         });
     });
@@ -83,19 +121,21 @@ function parseDocument(text, file) {
                     if (text === null || text === void 0 ? void 0 : text.trim()) {
                         return [2 /*return*/, {
                                 text: cleanText_1.cleanText(text),
-                                source: "text"
+                                source: "text",
+                                links: []
                             }];
                     }
                     if (!file) return [3 /*break*/, 2];
                     if (file.mimetype !== "application/pdf") {
                         throw new errors_1.AIError("INVALID_FILE_TYPE", "Only PDF files are supported.");
                     }
-                    return [4 /*yield*/, extractPdfText(file.buffer)];
+                    return [4 /*yield*/, extractPdfContent(file.buffer)];
                 case 1:
                     pdfText = _a.sent();
                     return [2 /*return*/, {
-                            text: cleanText_1.cleanText(pdfText),
-                            source: "pdf"
+                            text: cleanText_1.cleanText(pdfText.text),
+                            source: "pdf",
+                            links: pdfText.links
                         }];
                 case 2: throw new errors_1.AIError("NO_DOCUMENT", "Please provide job text or upload a PDF.");
             }

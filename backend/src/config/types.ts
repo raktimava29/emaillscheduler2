@@ -43,3 +43,23 @@ export interface UploadedFile {
     mimetype: string;
     originalname: string;
 }
+
+export interface ResumeSection {
+    heading: string;
+    content: string;
+}
+
+export interface ResumeSections {
+    summary?: ResumeSection;
+    education?: ResumeSection;
+    experience?: ResumeSection;
+    projects?: ResumeSection;
+    skills?: ResumeSection;
+    achievements?: ResumeSection;
+    certifications?: ResumeSection;
+}
+
+export interface ResumeLink {
+    label?: string;
+    url: string;
+}
