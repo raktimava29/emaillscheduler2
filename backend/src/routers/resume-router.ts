@@ -2,13 +2,14 @@ import { Router } from "express";
 import { upload } from "../middleware/upload";
 import { resumeParserController } from "../controllers/resume-controller";
 import { contextController } from "../controllers/context-controller";
+import { parseController } from "../controllers/parser-controller";
 
 const router = Router();
 
 router.post("/resume-parser", upload.single("resumeFile"), resumeParserController);
 
 router.post(
-    "/context",
+    "/parse",
     upload.fields([
         {
             name: "resumeFile",
@@ -19,7 +20,9 @@ router.post(
             maxCount: 1,
         },
     ]),
-    contextController
+    parseController
 );
+
+router.post("/context", contextController);
 
 export default router;

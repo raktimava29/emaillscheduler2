@@ -36,23 +36,50 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.contextController = void 0;
-var context_service_1 = require("../services/context-service");
+exports.parseController = void 0;
+var documentParser_1 = require("../utils/documentParser");
+var resume_service_1 = require("../services/resume-service");
+var jobParser_service_1 = require("../services/jobParser-service");
+var extractSections_1 = require("../utils/extractSections");
 var errors_1 = require("../utils/errors");
-function contextController(req, res) {
+function parseController(req, res) {
+    var _a, _b, _c, _d, _e, _f;
     return __awaiter(this, void 0, void 0, function () {
-        var _a, resume, job, selectedRole, context, err_1;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var files, hasResume, hasJob, resumeDocument, resumeSections, resume, jobDocument, job, err_1;
+        return __generator(this, function (_g) {
+            switch (_g.label) {
                 case 0:
-                    _b.trys.push([0, 2, , 3]);
-                    _a = req.body, resume = _a.resume, job = _a.job, selectedRole = _a.selectedRole;
-                    return [4 /*yield*/, context_service_1.buildCandidateContext(resume, job, selectedRole)];
+                    _g.trys.push([0, 5, , 6]);
+                    files = req.files;
+                    hasResume = Boolean((_a = req.body.resumeFile) === null || _a === void 0 ? void 0 : _a.trim()) ||
+                        Boolean((_b = files === null || files === void 0 ? void 0 : files.resumeFile) === null || _b === void 0 ? void 0 : _b[0]);
+                    hasJob = Boolean((_c = req.body.jobFile) === null || _c === void 0 ? void 0 : _c.trim()) ||
+                        Boolean((_d = files === null || files === void 0 ? void 0 : files.jobFile) === null || _d === void 0 ? void 0 : _d[0]);
+                    if (!hasResume) {
+                        throw new errors_1.AIError("MISSING_RESUME", "Provide either resumeFile as text or upload a resume file.", 400);
+                    }
+                    if (!hasJob) {
+                        throw new errors_1.AIError("MISSING_JOB", "Provide either jobFile as text or upload a job file.", 400);
+                    }
+                    return [4 /*yield*/, documentParser_1.parseDocument(req.body.resumeFile, (_e = files === null || files === void 0 ? void 0 : files.resumeFile) === null || _e === void 0 ? void 0 : _e[0])];
                 case 1:
-                    context = _b.sent();
-                    return [2 /*return*/, res.json(context)];
+                    resumeDocument = _g.sent();
+                    resumeSections = extractSections_1.extractSections(resumeDocument.text);
+                    return [4 /*yield*/, resume_service_1.parseResume(resumeDocument.text, resumeSections, resumeDocument.links)];
                 case 2:
-                    err_1 = _b.sent();
+                    resume = _g.sent();
+                    return [4 /*yield*/, documentParser_1.parseDocument(req.body.jobFile, (_f = files === null || files === void 0 ? void 0 : files.jobFile) === null || _f === void 0 ? void 0 : _f[0])];
+                case 3:
+                    jobDocument = _g.sent();
+                    return [4 /*yield*/, jobParser_service_1.parseJob(jobDocument.text)];
+                case 4:
+                    job = _g.sent();
+                    return [2 /*return*/, res.json({
+                            resume: resume,
+                            job: job
+                        })];
+                case 5:
+                    err_1 = _g.sent();
                     if (err_1 instanceof errors_1.AIError) {
                         return [2 /*return*/, res.status(err_1.statusCode).json({
                                 success: false,
@@ -66,9 +93,9 @@ function contextController(req, res) {
                             code: "AI_ERROR",
                             message: "Something went wrong."
                         })];
-                case 3: return [2 /*return*/];
+                case 6: return [2 /*return*/];
             }
         });
     });
 }
-exports.contextController = contextController;
+exports.parseController = parseController;

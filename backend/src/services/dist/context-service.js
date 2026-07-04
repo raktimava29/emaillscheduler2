@@ -50,51 +50,33 @@ exports.__esModule = true;
 exports.buildCandidateContext = void 0;
 var client_1 = require("../client");
 var context_prompt_1 = require("../prompts/context-prompt");
-var context_selection_schema_1 = require("../schemas/context-selection-schema");
-var candidate_selection_1 = require("../schemas/candidate-selection");
-function buildCandidateContext(resume, job) {
+var candidate_selection_schema_1 = require("../schemas/candidate-selection-schema");
+function buildCandidateContext(resume, job, selectedRole) {
     var _a;
     return __awaiter(this, void 0, Promise, function () {
-        var completion, content, parsed, selection, relevantProjects, relevantExperience, education;
+        var contextJob, completion, content, parsed;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, client_1.groq.chat.completions.create({
-                        model: "llama-3.3-70b-versatile",
-                        temperature: 0,
-                        response_format: {
-                            type: "json_object"
-                        },
-                        messages: [
-                            {
-                                role: "user",
-                                content: context_prompt_1.buildContextPrompt(resume, job)
+                case 0:
+                    contextJob = __assign(__assign({}, job), { selectedJobTitle: selectedRole });
+                    return [4 /*yield*/, client_1.groq.chat.completions.create({
+                            model: "llama-3.3-70b-versatile",
+                            temperature: 0,
+                            response_format: {
+                                type: "json_object"
                             },
-                        ]
-                    })];
+                            messages: [
+                                {
+                                    role: "user",
+                                    content: context_prompt_1.buildContextPrompt(resume, contextJob)
+                                },
+                            ]
+                        })];
                 case 1:
                     completion = _b.sent();
                     content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
                     parsed = JSON.parse(content);
-                    selection = context_selection_schema_1.ContextSelectionSchema.parse(parsed);
-                    relevantProjects = resume.projects.filter(function (project) {
-                        return selection.relevantProjects.some(function (name) { return name.toLowerCase() === project.name.toLowerCase(); });
-                    });
-                    relevantExperience = resume.experience.filter(function (exp) {
-                        return selection.relevantExperience.some(function (position) {
-                            var _a;
-                            return position.toLowerCase() ===
-                                ((_a = exp.position) !== null && _a !== void 0 ? _a : "").toLowerCase();
-                        });
-                    });
-                    education = resume.education.filter(function (edu) {
-                        return selection.education.some(function (degree) {
-                            return degree.toLowerCase() ===
-                                edu.degree.toLowerCase();
-                        });
-                    });
-                    return [2 /*return*/, candidate_selection_1.CandidateContextSchema.parse(__assign(__assign({}, selection), { relevantProjects: relevantProjects,
-                            relevantExperience: relevantExperience,
-                            education: education }))];
+                    return [2 /*return*/, candidate_selection_schema_1.CandidateContextSchema.parse(parsed)];
             }
         });
     });

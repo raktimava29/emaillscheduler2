@@ -1,116 +1,186 @@
 export function buildJobParserPrompt(jobText: string): string {
-  return `
+return `
 You are an expert information extraction engine.
 
-Your only task is to extract structured information from a job description, hiring post, recruitment email, or careers page.
+Your ONLY task is to extract structured information from the job description.
 
-STRICT RULES:
+Return ONLY valid JSON.
 
-- Return ONLY a valid JSON object.
-- Do NOT return markdown.
-- Do NOT explain your reasoning.
-- Do NOT add any extra text before or after the JSON.
-- Never hallucinate or invent information.
-- Never infer missing values.
-- If a value is not explicitly present, return null.
-- Every key in the schema MUST always be present.
-- Arrays must always exist. Use [] if no values are found.
-- confidenceScore must be a number between 0.0 and 1.0.
+Rules
 
-EXTRACTION RULES:
+- Never explain.
+- Never use markdown.
+- Never hallucinate.
+- Never infer missing information.
+- If a value is not explicitly stated, return null.
+- Every key in the schema must exist.
+- Arrays must always exist.
+- confidenceScore must be between 0.0 and 1.0.
+
+Extraction Rules
 
 Company
-- Extract the company only if explicitly mentioned.
-- If the post starts with "<Company> is Hiring", use <Company> as the company.
+- Extract only if explicitly mentioned.
+- If the post starts with "<Company> is hiring", use that company.
 
 Recipient Email
-- Extract recipientEmail only if explicitly present.
-- If multiple email addresses exist, choose the one intended for job applications.
-- Otherwise return null.
+- Return the application email address only.
+- If none exists, return null.
 
 Job Titles
-- Extract every advertised job role.
-- Store them in "jobTitles".
-- Do NOT merge multiple roles.
-- Do NOT choose one role.
-- Always set "selectedJobTitle" to null.
+- Extract every advertised role.
+- Store them in jobTitles.
+- Keep each role separate.
+- Always return selectedJobTitle as null.
 
 Contact Name
 - Extract only if explicitly mentioned.
 
 Location
-- Extract only if explicitly mentioned.
+- Extract every advertised work location.
+- If multiple locations exist, join them using " | ".
+- Otherwise return null.
 
 Work Mode
-- Extract one of the following whenever explicitly mentioned:
-  - Remote
-  - Hybrid
-  - On-Site
-  - On Site
-  - Work From Home
-  - WFH
-- Otherwise return null.
+Return exactly one of:
+- Remote
+- Hybrid
+- On-Site
 
-Joining Preference
-- Extract statements such as:
-  - Immediate Joiners Preferred
-  - Join within 15 days
-  - Immediate Joining
-- Otherwise return null.
+Return null if unspecified.
 
 Employment Type
-Examples:
-- Full Time
-- Part Time
+Return exactly one of:
+- Full-Time
+- Part-Time
 - Internship
 - Contract
 - Freelance
+- Temporary
+
+Return null if unspecified.
+
+Joining Preference
+
+Normalize common phrases.
+
+Examples
+
+Immediate Joiners Preferred
+Immediate Joining
+Join Immediately
+
+→ Immediate
+
+Join within 15 days
+
+→ Within 15 Days
+
+Return null if not specified.
 
 Experience Required
-- Extract only the explicitly mentioned experience requirement.
+
+Return a SINGLE string.
+
+If multiple roles have different experience requirements, return the minimum requirement that qualifies a candidate for at least one advertised role.
+
+Examples
+
+Backend Engineer — 2+ Years
+Software Engineer Intern — 6 Months
+Software Engineer Trainee — Fresher
+
+→ "Fresher"
+
+Backend Engineer — 3+ Years
+Senior Backend Engineer — 5+ Years
+
+→ "3+ Years"
+
+Internship — 6 Months
+Junior Engineer — 1 Year
+
+→ "6 Months"
+
+If all roles share the same requirement, return that value.
+
+Return null only if no experience requirement is explicitly mentioned.
+
+Never return an array.
 
 Salary
-- Extract only if explicitly mentioned.
+Extract only if explicitly stated.
 
 Skills
-- Extract only technical or job-related skills explicitly mentioned.
-- Do NOT infer additional skills.
-- Return [] if none are listed.
+
+Extract EVERY explicitly required skill or competency that would be evaluated during hiring.
+
+Include
+
+- Programming languages
+- Frameworks
+- Libraries
+- Databases
+- APIs
+- Cloud platforms
+- DevOps tools
+- AI / ML technologies
+- Authentication & Security
+- Version Control
+- Testing
+- Architecture concepts
+- Computer Science fundamentals
+  (Operating Systems, Networking, DBMS, OOP, DSA, SDLC)
+- Professional engineering skills
+  (Programming, Debugging, Analytical Skills, Problem Solving)
+- Communication or teamwork skills ONLY if explicitly listed as requirements.
+
+Rules
+
+- Extract each skill separately.
+- Do not merge skills.
+- Do not infer technologies.
+- Preserve original wording whenever practical.
 
 Application Deadline
-- Extract only if explicitly mentioned.
+Extract only if explicitly mentioned.
 
 Job Link
-- Extract only if explicitly mentioned.
+Extract only if explicitly mentioned.
 
 Keywords
-- Extract important hiring-related keywords that describe:
-  - Candidate expectations
-  - Work culture
-  - Learning opportunities
-  - Career growth
-  - Company values
-  - Hiring priorities
-  - Benefits
-  - Work environment
 
-  Examples:
+Extract non-technical hiring signals that help personalize an application.
 
-- Immediate Joining
-- PPO
+Include things like
+
 - Mentorship
 - Career Growth
 - Learning Opportunities
+- Ownership
+- Innovation
 - Collaborative Culture
-- International Projects
-- Fast Learner
-- Team Player
-- Leadership
-- Communication Skills
+- Startup Environment
+- Fast-paced Environment
+- AI-first Culture
+- Customer Focus
+- Research
+- International Exposure
+- Remote-first
+- Immediate Hiring
 
-Ignore product names, marketing buzzwords, and company feature descriptions unless they are directly relevant to the candidate.
+Do NOT include
 
-Return JSON matching EXACTLY this schema:
+- Programming languages
+- Frameworks
+- Databases
+- APIs
+- CS subjects
+- Technical skills
+- Job titles
+- Company product names
+
+Return EXACTLY
 
 {
   "recipientEmail": null,
@@ -131,15 +201,7 @@ Return JSON matching EXACTLY this schema:
   "confidenceScore": 0
 }
 
-Before returning the JSON:
-
-- Ensure every required key is present.
-- Do not add extra keys.
-- Use null for unknown values.
-- Use [] for unknown arrays.
-- Ensure the output is valid JSON.
-
-Job Description:
+Job Description
 
 ${jobText}
 `;
