@@ -1,9 +1,10 @@
 export function normalizeWorkMode(
     workMode: string | null
 ): string | null {
+
     if (!workMode) return null;
 
-    const value = workMode.toLowerCase();
+    const value = workMode.trim().toLowerCase();
 
     if (
         value.includes("remote") ||
@@ -26,37 +27,48 @@ export function normalizeWorkMode(
         return "On-Site";
     }
 
-    return workMode;
+    return workMode.trim();
 }
 
 export function normalizeEmploymentType(
-  employmentType: string | null
+    employmentType: string | null
 ): string | null {
-  if (!employmentType) return null;
 
-  const value = employmentType.toLowerCase();
+    if (!employmentType) return null;
 
-  if (value.includes("intern")) return "Internship";
+    const value = employmentType.trim().toLowerCase();
 
-  if (
-    value.includes("full") ||
-    value.includes("full-time") ||
-    value.includes("full time")
-  ) {
-    return "Full-Time";
-  }
+    if (value.includes("intern")) {
+        return "Internship";
+    }
 
-  if (
-    value.includes("part") ||
-    value.includes("part-time") ||
-    value.includes("part time")
-  ) {
-    return "Part-Time";
-  }
+    if (
+        value.includes("full") ||
+        value.includes("full-time") ||
+        value.includes("full time")
+    ) {
+        return "Full-Time";
+    }
 
-  if (value.includes("contract")) return "Contract";
+    if (
+        value.includes("part") ||
+        value.includes("part-time") ||
+        value.includes("part time")
+    ) {
+        return "Part-Time";
+    }
 
-  if (value.includes("freelance")) return "Freelance";
+    if (value.includes("contract")) {
+        return "Contract";
+    }
 
-  return employmentType;
+    if (value.includes("freelance")) {
+        return "Freelance";
+    }
+
+    if (value.includes("temporary")) {
+        return "Temporary";
+    }
+
+    return employmentType.trim();
 }

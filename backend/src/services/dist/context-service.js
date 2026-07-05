@@ -51,27 +51,25 @@ exports.buildCandidateContext = void 0;
 var client_1 = require("../client");
 var context_prompt_1 = require("../prompts/context-prompt");
 var candidate_selection_schema_1 = require("../schemas/candidate-selection-schema");
-function buildCandidateContext(resume, job, selectedRole) {
+function buildCandidateContext(resume, job) {
     var _a, _b, _c;
     return __awaiter(this, void 0, Promise, function () {
-        var contextJob, completion, email, content, parsed;
+        var completion, email, content, parsed;
         return __generator(this, function (_d) {
             switch (_d.label) {
-                case 0:
-                    contextJob = __assign(__assign({}, job), { selectedJobTitle: selectedRole });
-                    return [4 /*yield*/, client_1.groq.chat.completions.create({
-                            model: "llama-3.3-70b-versatile",
-                            temperature: 0,
-                            response_format: {
-                                type: "json_object"
+                case 0: return [4 /*yield*/, client_1.groq.chat.completions.create({
+                        model: "llama-3.3-70b-versatile",
+                        temperature: 0,
+                        response_format: {
+                            type: "json_object"
+                        },
+                        messages: [
+                            {
+                                role: "user",
+                                content: context_prompt_1.buildContextPrompt(resume, job)
                             },
-                            messages: [
-                                {
-                                    role: "user",
-                                    content: context_prompt_1.buildContextPrompt(resume, contextJob)
-                                },
-                            ]
-                        })];
+                        ]
+                    })];
                 case 1:
                     completion = _d.sent();
                     email = (_b = (_a = resume.links.find(function (link) { return link.url.startsWith("mailto:"); })) === null || _a === void 0 ? void 0 : _a.url.replace("mailto:", "")) !== null && _b !== void 0 ? _b : null;

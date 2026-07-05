@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch, redirect } from "../lib/api";
+import AIModal from "../components/AIModal";
 
 export default function Compose() {
   const navigate = useNavigate();
@@ -11,22 +12,13 @@ export default function Compose() {
   const [body, setBody] = useState("");
   const [showScheduler, setShowScheduler] = useState(false);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
-  const [attachment, setAttachment] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [profile, setProfile] = useState<{
     name: string;
     email: string;
     avatar_url: string | null;
   } | null>(null);
-
-  const handleAttach = (file: File | null) => {
-    if (!file) return;
-    setAttachment(file);
-  };
-
-  const removeAttachment = () => {
-    setAttachment(null);
-  };
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -145,19 +137,14 @@ export default function Compose() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Attachment Button */}
-            <label className="group cursor-pointer flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-gray-100 transition-all duration-200">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              <input
-                type="file"
-                aria-label="Attach File"
-                hidden
-                onChange={(e) => handleAttach(e.target.files?.[0] ?? null)}
-              />
-            </label>
-
+            {/* AI Email Generation */}
+            <button
+              onClick={() => setIsOpen(true)}
+              className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+            >
+              Generate for JD
+            </button>
+            
             {/* Schedule Button */}
             <button
               aria-label="showScheduler"
@@ -264,24 +251,16 @@ export default function Compose() {
               />
             </div>
 
-            {/* Attachment Display */}
-            {attachment && (
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="flex-1 text-sm text-gray-700 truncate">{attachment.name}</span>
-                <button
-                  aria-label="removeAttachment"
-                  onClick={removeAttachment}
-                  className="text-gray-500 hover:text-red-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
+            {/* <AIApplicationModal
+              open={isOpen}
+              onClose={() => setIsOpen(false)}
+              onComplete={(email) => {
+                  setTo(email.recipient);
+                  setSubject(email.subject);
+                  setBody(email.body);
+              }}
+          /> */}
+            
 
             {/* Body Field */}
             <div className="flex flex-1 flex-col gap-2 min-h-0">
@@ -380,6 +359,13 @@ export default function Compose() {
           animation: slideIn 0.3s ease-out;
         }
       `}</style>
+
+      {isOpen && (
+        <AIModal
+            open
+            onClose={() => setIsOpen(false)}
+        />
+    )}
     </div>
   );
 }

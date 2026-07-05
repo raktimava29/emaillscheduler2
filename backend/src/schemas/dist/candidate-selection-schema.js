@@ -1,8 +1,13 @@
 "use strict";
 exports.__esModule = true;
-exports.CandidateContextSchema = void 0;
+exports.CandidateContextSchema = exports.SkillMatchSchema = void 0;
 var zod_1 = require("zod");
 var resume_schema_1 = require("./resume-schema");
+var jobParser_schema_1 = require("./jobParser-schema");
+exports.SkillMatchSchema = zod_1.z.object({
+    jobSkill: zod_1.z.string(),
+    resumeSkill: zod_1.z.string()
+});
 exports.CandidateContextSchema = zod_1.z.object({
     candidateName: zod_1.z.string().nullable(),
     phone: zod_1.z.string().nullable(),
@@ -13,12 +18,9 @@ exports.CandidateContextSchema = zod_1.z.object({
     })),
     contactName: zod_1.z.string().nullable(),
     company: zod_1.z.string().nullable(),
-    selectedRole: zod_1.z.string().nullable(),
-    location: zod_1.z.string().nullable(),
-    workMode: zod_1.z.string().nullable(),
-    employmentType: zod_1.z.string().nullable(),
+    selectedRole: jobParser_schema_1.RoleSchema.nullable(),
     joiningPreference: zod_1.z.string().nullable(),
-    matchingSkills: zod_1.z.array(zod_1.z.string()),
+    matchingSkills: zod_1.z.array(exports.SkillMatchSchema),
     missingSkills: zod_1.z.array(zod_1.z.string()),
     relevantProjects: zod_1.z.array(resume_schema_1.ProjectSchema),
     relevantExperience: zod_1.z.array(resume_schema_1.ExperienceSchema),

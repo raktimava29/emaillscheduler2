@@ -7,9 +7,9 @@ export async function contextController(
     res: Response
 ) {
     try {
-        const {resume, job, selectedRole} = req.body;
+        const {resume, job} = req.body;
 
-        const context = await buildCandidateContext(resume, job, selectedRole);
+        const context = await buildCandidateContext(resume, job);
 
         return res.json(context);
     } catch (err) {

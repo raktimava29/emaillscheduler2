@@ -4,7 +4,7 @@ exports.normalizeEmploymentType = exports.normalizeWorkMode = void 0;
 function normalizeWorkMode(workMode) {
     if (!workMode)
         return null;
-    var value = workMode.toLowerCase();
+    var value = workMode.trim().toLowerCase();
     if (value.includes("remote") ||
         value.includes("wfh") ||
         value.includes("work from home")) {
@@ -19,15 +19,16 @@ function normalizeWorkMode(workMode) {
         value.includes("office")) {
         return "On-Site";
     }
-    return workMode;
+    return workMode.trim();
 }
 exports.normalizeWorkMode = normalizeWorkMode;
 function normalizeEmploymentType(employmentType) {
     if (!employmentType)
         return null;
-    var value = employmentType.toLowerCase();
-    if (value.includes("intern"))
+    var value = employmentType.trim().toLowerCase();
+    if (value.includes("intern")) {
         return "Internship";
+    }
     if (value.includes("full") ||
         value.includes("full-time") ||
         value.includes("full time")) {
@@ -38,10 +39,15 @@ function normalizeEmploymentType(employmentType) {
         value.includes("part time")) {
         return "Part-Time";
     }
-    if (value.includes("contract"))
+    if (value.includes("contract")) {
         return "Contract";
-    if (value.includes("freelance"))
+    }
+    if (value.includes("freelance")) {
         return "Freelance";
-    return employmentType;
+    }
+    if (value.includes("temporary")) {
+        return "Temporary";
+    }
+    return employmentType.trim();
 }
 exports.normalizeEmploymentType = normalizeEmploymentType;

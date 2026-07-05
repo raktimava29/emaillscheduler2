@@ -1,6 +1,7 @@
 import { groq } from "../client";
 import { buildJobParserPrompt } from "../prompts/jobParser-prompt";
 import { JobParserResponse, JobParserResponseSchema } from "../schemas/jobParser-schema";
+import type { Role } from "../schemas/jobParser-schema";
 import { normalizeEmploymentType, normalizeWorkMode } from "../utils/normalize";
 
 export async function parseJob(
@@ -23,9 +24,26 @@ export async function parseJob(
 
     const content = completion.choices[0].message.content ?? "{}";
 
-    const parsed = JSON.parse(content);
-    parsed.workMode = normalizeWorkMode(parsed.workMode);
-    parsed.employmentType = normalizeEmploymentType(parsed.employmentType);
+    let parsed: any;
 
+    try {
+        parsed = JSON.parse(content);
+    } catch {
+        throw new Error("AI returned invalid JSON.");
+    }
+    
+    if (Array.isArray(parsed.roles)) {
+        parsed.roles = (parsed.roles as Role[])
+            .map((role) => ({
+                ...role,
+                workMode: normalizeWorkMode(role.workMode),
+                employmentType: normalizeEmploymentType(role.employmentType),
+            }))
+            .filter(
+                (role, index, self) =>
+                    index === self.findIndex((r) => r.title.toLowerCase() === role.title.toLowerCase())
+            );
+        }
+    
     return JobParserResponseSchema.parse(parsed);
 }

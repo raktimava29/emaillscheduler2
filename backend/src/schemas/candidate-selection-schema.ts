@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { EducationSchema, ExperienceSchema, ProjectSchema } from "./resume-schema";
+import { RoleSchema } from "./jobParser-schema";
+
+export const SkillMatchSchema = z.object({
+    jobSkill: z.string(),
+    resumeSkill: z.string(),
+});
 
 export const CandidateContextSchema = z.object({
     candidateName: z.string().nullable(),
@@ -15,13 +21,10 @@ export const CandidateContextSchema = z.object({
 
     contactName: z.string().nullable(),
     company: z.string().nullable(),
-    selectedRole: z.string().nullable(),
-    location: z.string().nullable(),
-    workMode: z.string().nullable(),
-    employmentType: z.string().nullable(),
+    selectedRole: RoleSchema.nullable(),
     joiningPreference: z.string().nullable(),
 
-    matchingSkills: z.array(z.string()),
+    matchingSkills: z.array(SkillMatchSchema),
     missingSkills: z.array(z.string()),
 
     relevantProjects: z.array(ProjectSchema),

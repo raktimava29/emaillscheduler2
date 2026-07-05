@@ -7,13 +7,7 @@ import { JobParserResponse } from "../schemas/jobParser-schema";
 export async function buildCandidateContext(
     resume: ResumeParserResponse,
     job: JobParserResponse,
-    selectedRole: string
 ): Promise<CandidateContext> {
-
-    const contextJob: JobParserResponse = {
-        ...job,
-        selectedJobTitle: selectedRole,
-    };
 
     const completion = await groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
@@ -26,7 +20,7 @@ export async function buildCandidateContext(
                 role: "user",
                 content: buildContextPrompt(
                     resume,
-                    contextJob
+                    job
                 ),
             },
         ],

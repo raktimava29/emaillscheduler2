@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -63,9 +74,19 @@ function parseJob(document) {
                 case 1:
                     completion = _b.sent();
                     content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
-                    parsed = JSON.parse(content);
-                    parsed.workMode = normalize_1.normalizeWorkMode(parsed.workMode);
-                    parsed.employmentType = normalize_1.normalizeEmploymentType(parsed.employmentType);
+                    try {
+                        parsed = JSON.parse(content);
+                    }
+                    catch (_c) {
+                        throw new Error("AI returned invalid JSON.");
+                    }
+                    if (Array.isArray(parsed.roles)) {
+                        parsed.roles = parsed.roles
+                            .map(function (role) { return (__assign(__assign({}, role), { workMode: normalize_1.normalizeWorkMode(role.workMode), employmentType: normalize_1.normalizeEmploymentType(role.employmentType) })); })
+                            .filter(function (role, index, self) {
+                            return index === self.findIndex(function (r) { return r.title.toLowerCase() === role.title.toLowerCase(); });
+                        });
+                    }
                     return [2 /*return*/, jobParser_schema_1.JobParserResponseSchema.parse(parsed)];
             }
         });

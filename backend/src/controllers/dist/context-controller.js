@@ -41,13 +41,13 @@ var context_service_1 = require("../services/context-service");
 var errors_1 = require("../utils/errors");
 function contextController(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, resume, job, selectedRole, context, err_1;
+        var _a, resume, job, context, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
-                    _a = req.body, resume = _a.resume, job = _a.job, selectedRole = _a.selectedRole;
-                    return [4 /*yield*/, context_service_1.buildCandidateContext(resume, job, selectedRole)];
+                    _a = req.body, resume = _a.resume, job = _a.job;
+                    return [4 /*yield*/, context_service_1.buildCandidateContext(resume, job)];
                 case 1:
                     context = _b.sent();
                     return [2 /*return*/, res.json(context)];
