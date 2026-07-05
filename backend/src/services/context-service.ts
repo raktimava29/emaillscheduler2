@@ -32,9 +32,17 @@ export async function buildCandidateContext(
         ],
     });
 
+    const email = resume.links.find(link => link.url.startsWith("mailto:"))?.url.replace("mailto:", "") ?? null;
+
     const content = completion.choices[0].message.content ?? "{}";
 
     const parsed = JSON.parse(content);
 
-    return CandidateContextSchema.parse(parsed);
+    return CandidateContextSchema.parse({
+        ...parsed,
+        phone: resume.phone,
+        email,
+        links: resume.links,
+        contactName: job.contactName
+    });
 }

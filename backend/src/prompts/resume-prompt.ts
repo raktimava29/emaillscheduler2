@@ -35,7 +35,23 @@ STRICT RULES
 - Move those accomplishments into the "achievements" array instead.
 - If the resume does not contain any professional work experience, return an empty experience array.
 - If a professional experience entry does not specify a company, set "company" to null.
+- Extract the candidate's primary phone number if explicitly present.
+- Return the phone number exactly as written in the resume.
+- Do not normalize, reformat, or infer country codes.
+- If no phone number is present, return null.
 - confidenceScore must be between 0.0 and 1.0.
+
+IDENTITY EXTRACTION
+
+Extract the candidate's:
+
+- Full name
+- Primary phone number
+- Professional headline (if present)
+- Professional summary/objective (if present)
+
+The phone number must be copied exactly as it appears in the resume.
+Do not infer or modify it.
 
 The backend has already extracted helpful information.
 
@@ -55,6 +71,7 @@ Return EXACTLY:
 
 {
   "name": null,
+  "phone":null,
   "headline": null,
   "summary": null,
 

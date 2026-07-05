@@ -52,11 +52,11 @@ var client_1 = require("../client");
 var context_prompt_1 = require("../prompts/context-prompt");
 var candidate_selection_schema_1 = require("../schemas/candidate-selection-schema");
 function buildCandidateContext(resume, job, selectedRole) {
-    var _a;
+    var _a, _b, _c;
     return __awaiter(this, void 0, Promise, function () {
-        var contextJob, completion, content, parsed;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var contextJob, completion, email, content, parsed;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
                     contextJob = __assign(__assign({}, job), { selectedJobTitle: selectedRole });
                     return [4 /*yield*/, client_1.groq.chat.completions.create({
@@ -73,10 +73,11 @@ function buildCandidateContext(resume, job, selectedRole) {
                             ]
                         })];
                 case 1:
-                    completion = _b.sent();
-                    content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
+                    completion = _d.sent();
+                    email = (_b = (_a = resume.links.find(function (link) { return link.url.startsWith("mailto:"); })) === null || _a === void 0 ? void 0 : _a.url.replace("mailto:", "")) !== null && _b !== void 0 ? _b : null;
+                    content = (_c = completion.choices[0].message.content) !== null && _c !== void 0 ? _c : "{}";
                     parsed = JSON.parse(content);
-                    return [2 /*return*/, candidate_selection_schema_1.CandidateContextSchema.parse(parsed)];
+                    return [2 /*return*/, candidate_selection_schema_1.CandidateContextSchema.parse(__assign(__assign({}, parsed), { phone: resume.phone, email: email, links: resume.links, contactName: job.contactName }))];
             }
         });
     });

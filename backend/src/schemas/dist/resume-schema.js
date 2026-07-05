@@ -32,6 +32,7 @@ exports.ExperienceSchema = zod_1.z.object({
 });
 exports.ResumeParserResponseSchema = zod_1.z.object({
     name: zod_1.z.string().nullable(),
+    phone: zod_1.z.string().nullable(),
     headline: zod_1.z.string().nullable(),
     summary: zod_1.z.string().nullable(),
     education: zod_1.z.array(exports.EducationSchema),

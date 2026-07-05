@@ -33,6 +33,7 @@ export const ExperienceSchema = z.object({
 
 export const ResumeParserResponseSchema = z.object({
   name: z.string().nullable(),
+  phone: z.string().nullable(),
   headline: z.string().nullable(),
   summary: z.string().nullable(),
   education: z.array(EducationSchema),
