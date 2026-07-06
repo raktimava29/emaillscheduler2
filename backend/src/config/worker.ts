@@ -118,6 +118,7 @@ export function startWorker() {
       if (lock.rowCount === 0) return;
 
       try {
+        console.log(`Sending email ${emailJob.id}...`);
         await sendEmail({
           from: sender_email,
           to: emailJob.recipient_email,
@@ -125,7 +126,9 @@ export function startWorker() {
           text: body,
           refreshToken: gmail_refresh_token,
         });
+        console.log(`Email ${emailJob.id} sent via Gmail API`);
 
+        console.log(`Marking ${emailJob.id} as sent...`);
         await db.query(
           `
           UPDATE email_jobs
@@ -136,7 +139,11 @@ export function startWorker() {
           [emailJob.id]
         );
 
+        console.log(`Marked ${emailJob.id} as sent`);
+
       } catch (err) {
+          console.error("Worker caught error:");
+          console.error(err);
           if (
             err instanceof Error &&
             (err as any).code === "GMAIL_TOKEN_INVALID"

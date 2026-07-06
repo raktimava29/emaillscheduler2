@@ -116,6 +116,7 @@ function startWorker() {
                     _c.label = 10;
                 case 10:
                     _c.trys.push([10, 13, , 18]);
+                    console.log("Sending email " + emailJob.id + "...");
                     return [4 /*yield*/, gmail_service_1.sendEmail({
                             from: sender_email,
                             to: emailJob.recipient_email,
@@ -125,12 +126,17 @@ function startWorker() {
                         })];
                 case 11:
                     _c.sent();
+                    console.log("Email " + emailJob.id + " sent via Gmail API");
+                    console.log("Marking " + emailJob.id + " as sent...");
                     return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'sent',\n              sent_at = NOW()\n          WHERE id = $1\n          ", [emailJob.id])];
                 case 12:
                     _c.sent();
+                    console.log("Marked " + emailJob.id + " as sent");
                     return [3 /*break*/, 18];
                 case 13:
                     err_1 = _c.sent();
+                    console.error("Worker caught error:");
+                    console.error(err_1);
                     if (!(err_1 instanceof Error &&
                         err_1.code === "GMAIL_TOKEN_INVALID")) return [3 /*break*/, 15];
                     console.log("Invalid Gmail refresh token for " + sender_email + ". Clearing token...");
