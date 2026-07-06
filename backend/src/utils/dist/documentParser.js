@@ -37,10 +37,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 exports.parseDocument = void 0;
-var pdf_mjs_1 = require("pdfjs-dist/legacy/build/pdf.mjs");
+var pdf_parse_1 = require("pdf-parse");
 var errors_1 = require("./errors");
 var cleanText_1 = require("./cleanText");
-var extractLinks_1 = require("./extractLinks");
 function detectLabel(url) {
     var value = url.toLowerCase();
     if (value.includes("github")) {
@@ -63,51 +62,31 @@ function detectLabel(url) {
 function extractPdfContent(buffer) {
     var _a;
     return __awaiter(this, void 0, Promise, function () {
-        var pdf, text, links, pageNo, page, _b, _c, _d, content, pageText, visibleLinks, _loop_1, _i, visibleLinks_1, url;
-        return __generator(this, function (_e) {
-            switch (_e.label) {
-                case 0: return [4 /*yield*/, pdf_mjs_1.getDocument({
-                        data: new Uint8Array(buffer)
-                    }).promise];
+        var data, text, links, visibleLinks, _loop_1, _i, visibleLinks_1, url;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0: return [4 /*yield*/, pdf_parse_1["default"](buffer)];
                 case 1:
-                    pdf = _e.sent();
-                    text = "";
+                    data = _b.sent();
+                    text = data.text;
                     links = [];
-                    pageNo = 1;
-                    _e.label = 2;
-                case 2:
-                    if (!(pageNo <= pdf.numPages)) return [3 /*break*/, 7];
-                    return [4 /*yield*/, pdf.getPage(pageNo)];
-                case 3:
-                    page = _e.sent();
-                    _c = (_b = links.push).apply;
-                    _d = [links];
-                    return [4 /*yield*/, extractLinks_1.extractLinks(page)];
-                case 4:
-                    _c.apply(_b, _d.concat([_e.sent()]));
-                    return [4 /*yield*/, page.getTextContent()];
-                case 5:
-                    content = _e.sent();
-                    pageText = content.items
-                        .map(function (item) { return item.str; })
-                        .join(" ");
-                    text += pageText + "\n";
-                    _e.label = 6;
-                case 6:
-                    pageNo++;
-                    return [3 /*break*/, 2];
-                case 7:
                     visibleLinks = (_a = text.match(/(https?:\/\/[^\s]+|www\.[^\s]+|(?:github|linkedin|leetcode|codeforces)\.com\/[^\s]+)/gi)) !== null && _a !== void 0 ? _a : [];
                     _loop_1 = function (url) {
                         if (!links.some(function (link) { return link.url === url; })) {
-                            links.push({ url: url, label: detectLabel(url) });
+                            links.push({
+                                url: url,
+                                label: detectLabel(url)
+                            });
                         }
                     };
                     for (_i = 0, visibleLinks_1 = visibleLinks; _i < visibleLinks_1.length; _i++) {
                         url = visibleLinks_1[_i];
                         _loop_1(url);
                     }
-                    return [2 /*return*/, { text: text, links: links }];
+                    return [2 /*return*/, {
+                            text: text,
+                            links: links
+                        }];
             }
         });
     });
