@@ -12,7 +12,19 @@ const router = (0, express_1.Router)();
 router.get("/google", passport_1.default.authenticate("google", {
     scope: ["profile", "email"],
 }));
-router.get("/google/callback", passport_1.default.authenticate("google", {
+router.get("/google/callback", (req, res, next) => {
+    const { iss, code } = req.query;
+    if (!code) {
+        console.warn("OAuth callback missing code:", req.query);
+        return res.redirect(security_1.frontendUrl);
+    }
+    if (typeof iss === "string" &&
+        iss !== "https://accounts.google.com") {
+        console.warn("Ignoring invalid OAuth callback:", req.query);
+        return res.redirect(security_1.frontendUrl);
+    }
+    next();
+}, passport_1.default.authenticate("google", {
     session: false,
     failureRedirect: security_1.frontendUrl,
 }), login_controller_1.googleCallbackController);

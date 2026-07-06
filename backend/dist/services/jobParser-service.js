@@ -20,8 +20,21 @@ async function parseJob(document) {
         ],
     });
     const content = completion.choices[0].message.content ?? "{}";
-    const parsed = JSON.parse(content);
-    parsed.workMode = (0, normalize_1.normalizeWorkMode)(parsed.workMode);
-    parsed.employmentType = (0, normalize_1.normalizeEmploymentType)(parsed.employmentType);
+    let parsed;
+    try {
+        parsed = JSON.parse(content);
+    }
+    catch {
+        throw new Error("AI returned invalid JSON.");
+    }
+    if (Array.isArray(parsed.roles)) {
+        parsed.roles = parsed.roles
+            .map((role) => ({
+            ...role,
+            workMode: (0, normalize_1.normalizeWorkMode)(role.workMode),
+            employmentType: (0, normalize_1.normalizeEmploymentType)(role.employmentType),
+        }))
+            .filter((role, index, self) => index === self.findIndex((r) => r.title.toLowerCase() === role.title.toLowerCase()));
+    }
     return jobParser_schema_1.JobParserResponseSchema.parse(parsed);
 }

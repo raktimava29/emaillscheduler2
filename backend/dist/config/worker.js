@@ -51,9 +51,7 @@ function startWorker() {
         `, [emailJob.batch_id]);
         if (batchRows.length === 0)
             return;
-
         const { user_id, sender_email, subject, body, hourly_limit, gmail_refresh_token, } = batchRows[0];
-
         if (!gmail_refresh_token) {
             throw new Error("User has not connected Gmail.");
         }
@@ -80,6 +78,7 @@ function startWorker() {
         if (lock.rowCount === 0)
             return;
         try {
+            console.log(`Sending email ${emailJob.id}...`);
             await (0, gmail_service_1.sendEmail)({
                 from: sender_email,
                 to: emailJob.recipient_email,
@@ -87,25 +86,28 @@ function startWorker() {
                 text: body,
                 refreshToken: gmail_refresh_token,
             });
+            console.log(`Email ${emailJob.id} sent via Gmail API`);
+            console.log(`Marking ${emailJob.id} as sent...`);
             await db_1.db.query(`
           UPDATE email_jobs
           SET status = 'sent',
               sent_at = NOW()
           WHERE id = $1
           `, [emailJob.id]);
+            console.log(`Marked ${emailJob.id} as sent`);
         }
         catch (err) {
+            console.error("Worker caught error:");
+            console.error(err);
             if (err instanceof Error &&
                 err.code === "GMAIL_TOKEN_INVALID") {
                 console.log(`Invalid Gmail refresh token for ${sender_email}. Clearing token...`);
-                const result = await db_1.db.query(`
-  UPDATE users
-  SET gmail_refresh_token = NULL
-  WHERE id = $1
-  RETURNING id, email;
-  `, [user_id]);
-                console.log("Rows updated:", result.rowCount);
-                console.log(result.rows);
+                await db_1.db.query(`
+              UPDATE users
+              SET gmail_refresh_token = NULL
+              WHERE id = $1
+              RETURNING id, email;
+              `, [user_id]);
             }
             console.error(`Email ${emailJob.id} attempt failed`);
             // Only mark permanently failed after BullMQ has exhausted retries.

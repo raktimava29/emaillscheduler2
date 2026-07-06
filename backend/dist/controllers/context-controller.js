@@ -5,8 +5,8 @@ const context_service_1 = require("../services/context-service");
 const errors_1 = require("../utils/errors");
 async function contextController(req, res) {
     try {
-        const { resume, job, selectedRole } = req.body;
-        const context = await (0, context_service_1.buildCandidateContext)(resume, job, selectedRole);
+        const { resume, job } = req.body;
+        const context = await (0, context_service_1.buildCandidateContext)(resume, job);
         return res.json(context);
     }
     catch (err) {

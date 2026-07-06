@@ -1,19 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JobParserResponseSchema = void 0;
+exports.JobParserResponseSchema = exports.RoleSchema = void 0;
 const zod_1 = require("zod");
-exports.JobParserResponseSchema = zod_1.z.object({
-    recipientEmail: zod_1.z.string().email().nullable(),
-    company: zod_1.z.string().nullable(),
-    jobTitles: zod_1.z.array(zod_1.z.string()),
-    selectedJobTitle: zod_1.z.string().nullable(),
-    contactName: zod_1.z.string().nullable(),
+exports.RoleSchema = zod_1.z.object({
+    title: zod_1.z.string().min(1),
     location: zod_1.z.string().nullable(),
-    joiningPreference: zod_1.z.string().nullable(),
     workMode: zod_1.z.string().nullable(),
     employmentType: zod_1.z.string().nullable(),
     experienceRequired: zod_1.z.string().nullable(),
     salary: zod_1.z.string().nullable(),
+});
+exports.JobParserResponseSchema = zod_1.z.object({
+    recipientEmail: zod_1.z.string().email().nullable(),
+    company: zod_1.z.string().nullable(),
+    roles: zod_1.z.array(exports.RoleSchema).min(1),
+    selectedRole: exports.RoleSchema.nullable(),
+    contactName: zod_1.z.string().nullable(),
+    joiningPreference: zod_1.z.string().nullable(),
     skills: zod_1.z.array(zod_1.z.string()),
     applicationDeadline: zod_1.z.string().nullable(),
     jobLink: zod_1.z.string().nullable(),

@@ -5,14 +5,20 @@ function buildJobParserPrompt(jobText) {
     return `
 You are an expert information extraction engine.
 
-Your ONLY task is to extract structured information from the job description.
+Your ONLY task is to extract structured information from the job description into the EXACT JSON schema provided below.
 
 Return ONLY valid JSON.
 
+Do NOT explain.
+
+Do NOT summarize.
+
+Do NOT use markdown.
+
+Do NOT wrap the response inside code fences.
+
 Rules
 
-- Never explain.
-- Never use markdown.
 - Never hallucinate.
 - Never infer missing information.
 - If a value is not explicitly stated, return null.
@@ -20,40 +26,75 @@ Rules
 - Arrays must always exist.
 - confidenceScore must be between 0.0 and 1.0.
 
-Extraction Rules
+--------------------------------------------------
+COMPANY
+--------------------------------------------------
 
-Company
 - Extract only if explicitly mentioned.
 - If the post starts with "<Company> is hiring", use that company.
 
-Recipient Email
-- Return the application email address only.
-- If none exists, return null.
+--------------------------------------------------
+RECIPIENT EMAIL
+--------------------------------------------------
 
-Job Titles
-- Extract every advertised role.
-- Store them in jobTitles.
-- Keep each role separate.
-- Always return selectedJobTitle as null.
+- Extract the application email address only.
+- Return null if none exists.
 
-Contact Name
+--------------------------------------------------
+CONTACT NAME
+--------------------------------------------------
+
 - Extract only if explicitly mentioned.
+- Return null if unspecified.
 
-Location
-- Extract every advertised work location.
-- If multiple locations exist, join them using " | ".
-- Otherwise return null.
+--------------------------------------------------
+ROLES
+--------------------------------------------------
 
-Work Mode
-Return exactly one of:
+Extract EVERY advertised role.
+
+Return them inside the "roles" array.
+
+Each role MUST contain:
+
+- title
+- location
+- workMode
+- employmentType
+- experienceRequired
+- salary
+
+Never create additional roles.
+Only extract roles explicitly advertised.
+
+selectedRole
+- Always return null.
+- Never automatically select a role.
+- The frontend will determine the selected role after the user chooses one.
+
+Rules
+
+- Every advertised role must be represented as its own object.
+- Never merge multiple roles.
+- Never omit a role.
+- Preserve role titles exactly as written whenever practical.
+- If a property is not explicitly stated for that role, return null.
+- If the same value applies to every role (for example location or work mode), repeat that value for each role.
+- If only one role exists, the roles array must still contain exactly one object.
+- Never return an empty roles array.
+
+For each role:
+
+workMode must be exactly one of:
+
 - Remote
 - Hybrid
 - On-Site
 
-Return null if unspecified.
+or null.
 
-Employment Type
-Return exactly one of:
+employmentType must be exactly one of:
+
 - Full-Time
 - Part-Time
 - Internship
@@ -61,9 +102,32 @@ Return exactly one of:
 - Freelance
 - Temporary
 
-Return null if unspecified.
+or null.
 
-Joining Preference
+Examples
+
+Software Engineer
+
+Remote
+
+Full-Time
+
+2+ Years
+
+↓
+
+{
+  "title": "Software Engineer",
+  "location": "Remote",
+  "workMode": "Remote",
+  "employmentType": "Full-Time",
+  "experienceRequired": "2+ Years",
+  "salary": null
+}
+
+--------------------------------------------------
+JOINING PREFERENCE
+--------------------------------------------------
 
 Normalize common phrases.
 
@@ -73,89 +137,72 @@ Immediate Joiners Preferred
 Immediate Joining
 Join Immediately
 
-→ Immediate
+↓
+
+Immediate
 
 Join within 15 days
 
-→ Within 15 Days
+↓
+
+Within 15 Days
 
 Return null if not specified.
 
-Experience Required
-
-Return a SINGLE string.
-
-If multiple roles have different experience requirements, return the minimum requirement that qualifies a candidate for at least one advertised role.
-
-Examples
-
-Backend Engineer — 2+ Years
-Software Engineer Intern — 6 Months
-Software Engineer Trainee — Fresher
-
-→ "Fresher"
-
-Backend Engineer — 3+ Years
-Senior Backend Engineer — 5+ Years
-
-→ "3+ Years"
-
-Internship — 6 Months
-Junior Engineer — 1 Year
-
-→ "6 Months"
-
-If all roles share the same requirement, return that value.
-
-Return null only if no experience requirement is explicitly mentioned.
-
-Never return an array.
-
-Salary
-Extract only if explicitly stated.
-
-Skills
+--------------------------------------------------
+SKILLS
+--------------------------------------------------
 
 Extract EVERY explicitly required skill or competency that would be evaluated during hiring.
 
 Include
 
-- Programming languages
+- Programming Languages
 - Frameworks
 - Libraries
 - Databases
 - APIs
-- Cloud platforms
-- DevOps tools
-- AI / ML technologies
+- Cloud Platforms
+- DevOps Tools
+- AI / ML Technologies
 - Authentication & Security
 - Version Control
 - Testing
-- Architecture concepts
-- Computer Science fundamentals
+- Architecture Concepts
+- Computer Science Fundamentals
   (Operating Systems, Networking, DBMS, OOP, DSA, SDLC)
-- Professional engineering skills
+- Professional Engineering Skills
   (Programming, Debugging, Analytical Skills, Problem Solving)
 - Communication or teamwork skills ONLY if explicitly listed as requirements.
 
 Rules
 
-- Extract each skill separately.
-- Do not merge skills.
-- Do not infer technologies.
-- Preserve original wording whenever practical.
+- Extract every skill separately.
+- Never merge multiple skills.
+- Never infer technologies.
+- Preserve the original wording whenever practical.
 
-Application Deadline
-Extract only if explicitly mentioned.
+--------------------------------------------------
+APPLICATION DEADLINE
+--------------------------------------------------
 
-Job Link
-Extract only if explicitly mentioned.
+- Extract only if explicitly mentioned.
+- Otherwise return null.
 
-Keywords
+--------------------------------------------------
+JOB LINK
+--------------------------------------------------
 
-Extract non-technical hiring signals that help personalize an application.
+- Extract only if explicitly mentioned.
+- Otherwise return null.
 
-Include things like
+--------------------------------------------------
+KEYWORDS
+--------------------------------------------------
+
+Extract non-technical hiring signals that can help personalize an application.
+
+Examples include:
 
 - Mentorship
 - Career Growth
@@ -174,29 +221,38 @@ Include things like
 
 Do NOT include
 
-- Programming languages
+- Programming Languages
 - Frameworks
+- Libraries
 - Databases
 - APIs
-- CS subjects
-- Technical skills
-- Job titles
-- Company product names
+- Technical Skills
+- Computer Science Subjects
+- Company Product Names
+- Job Titles
 
-Return EXACTLY
+--------------------------------------------------
+OUTPUT FORMAT
+--------------------------------------------------
+
+Return EXACTLY this JSON structure.
 
 {
   "recipientEmail": null,
   "company": null,
-  "jobTitles": [],
-  "selectedJobTitle": null,
+  "roles": [
+    {
+      "title": "",
+      "location": null,
+      "workMode": null,
+      "employmentType": null,
+      "experienceRequired": null,
+      "salary": null
+    }
+  ],
+  "selectedRole": null,
   "contactName": null,
-  "location": null,
   "joiningPreference": null,
-  "workMode": null,
-  "employmentType": null,
-  "experienceRequired": null,
-  "salary": null,
   "skills": [],
   "applicationDeadline": null,
   "jobLink": null,
@@ -204,7 +260,9 @@ Return EXACTLY
   "confidenceScore": 0
 }
 
-Job Description
+--------------------------------------------------
+JOB DESCRIPTION
+--------------------------------------------------
 
 ${jobText}
 `;

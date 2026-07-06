@@ -4,11 +4,7 @@ exports.buildCandidateContext = buildCandidateContext;
 const client_1 = require("../client");
 const context_prompt_1 = require("../prompts/context-prompt");
 const candidate_selection_schema_1 = require("../schemas/candidate-selection-schema");
-async function buildCandidateContext(resume, job, selectedRole) {
-    const contextJob = {
-        ...job,
-        selectedJobTitle: selectedRole,
-    };
+async function buildCandidateContext(resume, job) {
     const completion = await client_1.groq.chat.completions.create({
         model: "llama-3.3-70b-versatile",
         temperature: 0,
@@ -18,7 +14,7 @@ async function buildCandidateContext(resume, job, selectedRole) {
         messages: [
             {
                 role: "user",
-                content: (0, context_prompt_1.buildContextPrompt)(resume, contextJob),
+                content: (0, context_prompt_1.buildContextPrompt)(resume, job),
             },
         ],
     });
