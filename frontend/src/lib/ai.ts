@@ -2,6 +2,7 @@ import { apiFetch } from "./api";
 import type { ResumeParserResponse } from "../types/resume";
 import type { JobParserResponse } from "../types/job";
 import type { CandidateContext } from "../types/context";
+import type { GeneratedEmail } from "../types/email";
 
 export interface ParseResponse {
     resume: ResumeParserResponse;
@@ -44,5 +45,19 @@ export async function buildContext(
             resume,
             job,
         }),
+    });
+}
+
+export async function generateEmail(
+    context: CandidateContext
+): Promise<GeneratedEmail> {
+
+    return apiFetch("/emails/generate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify(context),
     });
 }

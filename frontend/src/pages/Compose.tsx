@@ -251,17 +251,6 @@ export default function Compose() {
               />
             </div>
 
-            {/* <AIApplicationModal
-              open={isOpen}
-              onClose={() => setIsOpen(false)}
-              onComplete={(email) => {
-                  setTo(email.recipient);
-                  setSubject(email.subject);
-                  setBody(email.body);
-              }}
-          /> */}
-            
-
             {/* Body Field */}
             <div className="flex flex-1 flex-col gap-2 min-h-0">
               <label className="text-sm font-medium text-gray-600">Message</label>
@@ -364,6 +353,11 @@ export default function Compose() {
         <AIModal
             open
             onClose={() => setIsOpen(false)}
+            onGenerated={(email) => {
+              setTo(email.recipient ?? "");
+              setSubject(email.subject);
+              setBody(email.body);
+            }}
         />
     )}
     </div>

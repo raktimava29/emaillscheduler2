@@ -1,22 +1,27 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { AIStep } from "../types/ai-step";
 import ResumeUpload from "./ResumeUpload";
 import JobUpload from "./JobUpload";
 import LoadingScreen from "./LoadingScreen";
 import RoleSelector from "./RoleSelector";
-import { parseDocuments, buildContext } from "../lib/ai";
+import { parseDocuments, buildContext, generateEmail } from "../lib/ai";
 import type { ResumeParserResponse } from "../types/resume";
 import type { JobParserResponse } from "../types/job";
-import type { CandidateContext } from "../types/context";
 
 interface AIModalProps {
     open: boolean;
     onClose: () => void;
+    onGenerated: (email: {
+        recipient: string | null;
+        subject: string;
+        body: string;
+    }) => void;
 }
 
 export default function AIModal({
     open,
     onClose,
+    onGenerated
 }: AIModalProps) {
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [jobFile, setJobFile] = useState<File | null>(null);
@@ -25,17 +30,30 @@ export default function AIModal({
     const [step, setStep] = useState<AIStep>("UPLOAD_RESUME");
 
     const [resume, setResume] = useState<ResumeParserResponse | null>(null);
-
     const [job, setJob] = useState<JobParserResponse | null>(null);
 
-    const [context, setContext] = useState<CandidateContext | null>(null);
+    const resetModal = useCallback(() => {
+        setStep("UPLOAD_RESUME");
+
+        setResumeFile(null);
+        setJobFile(null);
+        setJobText("");
+
+        setResume(null);
+        setJob(null);
+    }, []);
+
+    const handleClose = useCallback(() => {
+        resetModal();
+        onClose();
+    }, [resetModal, onClose]);
 
     useEffect(() => {
         if (!open) return;
 
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") {
-                onClose();
+                handleClose();
             }
         };
 
@@ -44,7 +62,7 @@ export default function AIModal({
         return () => {
             window.removeEventListener("keydown", handleEscape);
         };
-    }, [open, onClose]);
+    }, [open, handleClose]);
 
     const handleBuildContext = async (
         resume: ResumeParserResponse,
@@ -55,15 +73,17 @@ export default function AIModal({
         try {
             const candidateContext = await buildContext(resume, job);
 
-            setContext(candidateContext);
+            setStep("GENERATING_EMAIL");
 
-            console.log(candidateContext);
+            const email = await generateEmail(candidateContext);
 
-            alert("Candidate Context Created!");
+            onGenerated({
+                recipient: job.recipientEmail,
+                subject: email.subject,
+                body: email.body,
+            });
 
-            // Temporary until email generation is added
-            setStep("ROLE_SELECTION");
-
+            handleClose();
         } catch (err) {
             console.error(err);
 
@@ -189,6 +209,15 @@ export default function AIModal({
             );
             break;
 
+        case "GENERATING_EMAIL":
+            content = (
+                <LoadingScreen
+                    title="Generating Email"
+                    description="Writing a personalized application email..."
+                />
+            );
+            break;
+
         default:
             content = null;
     }
@@ -196,14 +225,14 @@ export default function AIModal({
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6"
-            onClick={onClose}
+            onClick={handleClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl"
             >
                 <button
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="absolute right-5 top-5 rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                     aria-label="Close AI Assistant"
                 >
