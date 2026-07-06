@@ -48,6 +48,7 @@ export function startWorker() {
       const { rows: batchRows } = await db.query(
         `
         SELECT
+          b.user_id,
           b.sender_email,
           b.subject,
           b.body,
@@ -64,6 +65,7 @@ export function startWorker() {
       if (batchRows.length === 0) return;
 
       const {
+        user_id,
         sender_email,
         subject,
         body,
@@ -116,6 +118,7 @@ export function startWorker() {
       if (lock.rowCount === 0) return;
 
       try {
+        console.log(`Sending email ${emailJob.id}...`);
         await sendEmail({
           from: sender_email,
           to: emailJob.recipient_email,
@@ -123,7 +126,9 @@ export function startWorker() {
           text: body,
           refreshToken: gmail_refresh_token,
         });
+        console.log(`Email ${emailJob.id} sent via Gmail API`);
 
+        console.log(`Marking ${emailJob.id} as sent...`);
         await db.query(
           `
           UPDATE email_jobs
@@ -134,7 +139,27 @@ export function startWorker() {
           [emailJob.id]
         );
 
+        console.log(`Marked ${emailJob.id} as sent`);
+
       } catch (err) {
+          console.error("Worker caught error:");
+          console.error(err);
+          if (
+            err instanceof Error &&
+            (err as any).code === "GMAIL_TOKEN_INVALID"
+          ) {
+            console.log(`Invalid Gmail refresh token for ${sender_email}. Clearing token...`);
+
+            await db.query(
+              `
+              UPDATE users
+              SET gmail_refresh_token = NULL
+              WHERE id = $1
+              RETURNING id, email;
+              `,
+              [user_id]
+            );
+        }
         console.error(`Email ${emailJob.id} attempt failed`);
 
         // Only mark permanently failed after BullMQ has exhausted retries.
@@ -148,7 +173,11 @@ export function startWorker() {
             `,
             [
               emailJob.id,
-              err instanceof Error ? err.message : "Unknown error",
+              (err as any).code === "GMAIL_TOKEN_INVALID"
+                ? "Reconnect Gmail"
+                : err instanceof Error
+                ? err.message
+                : "Unknown error",
             ]
           );
 

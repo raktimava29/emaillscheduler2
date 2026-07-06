@@ -40,13 +40,14 @@ exports.sendEmail = void 0;
 var googleapis_1 = require("googleapis");
 var gmail_1 = require("../config/gmail");
 function sendEmail(_a) {
+    var _b, _c, _d;
     var from = _a.from, to = _a.to, subject = _a.subject, text = _a.text, refreshToken = _a.refreshToken;
     return __awaiter(this, void 0, void 0, function () {
         var gmail, message, raw, response, error_1;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0:
-                    _b.trys.push([0, 2, , 3]);
+                    _e.trys.push([0, 2, , 3]);
                     gmail_1.oauth2Client.setCredentials({
                         refresh_token: refreshToken
                     });
@@ -75,13 +76,17 @@ function sendEmail(_a) {
                             }
                         })];
                 case 1:
-                    response = _b.sent();
+                    response = _e.sent();
                     return [2 /*return*/, response.data];
                 case 2:
-                    error_1 = _b.sent();
+                    error_1 = _e.sent();
                     console.error("========== Gmail API Error ==========");
                     console.error(error_1);
                     console.error("======================================");
+                    if (((_c = (_b = error_1 === null || error_1 === void 0 ? void 0 : error_1.response) === null || _b === void 0 ? void 0 : _b.data) === null || _c === void 0 ? void 0 : _c.error) === "invalid_grant" ||
+                        ((_d = error_1 === null || error_1 === void 0 ? void 0 : error_1.cause) === null || _d === void 0 ? void 0 : _d.message) === "invalid_grant") {
+                        error_1.code = "GMAIL_TOKEN_INVALID";
+                    }
                     throw error_1;
                 case 3: return [2 /*return*/];
             }

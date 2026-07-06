@@ -50,11 +50,18 @@ export async function sendEmail({
     });
 
     return response.data;
-  } catch (error) {
-    console.error("========== Gmail API Error ==========");
-    console.error(error);
-    console.error("======================================");
+  } catch (error: any) {
+      console.error("========== Gmail API Error ==========");
+      console.error(error);
+      console.error("======================================");
 
-    throw error;
+      if (
+          error?.response?.data?.error === "invalid_grant" ||
+          error?.cause?.message === "invalid_grant"
+      ) {
+          error.code = "GMAIL_TOKEN_INVALID";
+      }
+
+      throw error;
   }
 }

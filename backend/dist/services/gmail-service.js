@@ -38,6 +38,10 @@ async function sendEmail({ from, to, subject, text, refreshToken, }) {
         console.error("========== Gmail API Error ==========");
         console.error(error);
         console.error("======================================");
+        if (error?.response?.data?.error === "invalid_grant" ||
+            error?.cause?.message === "invalid_grant") {
+            error.code = "GMAIL_TOKEN_INVALID";
+        }
         throw error;
     }
 }
