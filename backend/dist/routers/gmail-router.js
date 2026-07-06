@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const gmail_controller_1 = require("../controllers/gmail-controller");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.get("/connect", auth_1.requireAuth, gmail_controller_1.connectGmail);
+router.get("/callback", auth_1.requireAuth, gmail_controller_1.gmailCallback);
+router.post("/test", auth_1.requireAuth, gmail_controller_1.sendTestMail);
+exports.default = router;

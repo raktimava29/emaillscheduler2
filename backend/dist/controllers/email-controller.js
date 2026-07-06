@@ -9,12 +9,28 @@ const db_1 = require("../config/db");
 const queue_1 = require("../config/queue");
 async function scheduleEmails(req, res) {
     try {
-        const { senderEmail, subject, body, startTime, delayBetweenEmailsSeconds, recipients, hourlyLimit = 100, } = req.body;
+        const { subject, body, startTime, delayBetweenEmailsSeconds, recipients, hourlyLimit = 100, } = req.body;
         if (!recipients || recipients.length === 0) {
             return res.status(400).json({ error: "No recipients provided" });
         }
         const userId = req.user.userId;
         const batchId = (0, crypto_1.randomUUID)();
+        const { rows: userRows } = await db_1.db.query(`
+      SELECT 
+        email,
+        gmail_refresh_token
+      FROM users
+      WHERE id = $1
+      `, [userId]);
+        if (userRows.length === 0 ||
+            !userRows[0].gmail_refresh_token) {
+            return res.status(403).json({
+                code: "GMAIL_NOT_CONNECTED",
+                message: "Please connect your Gmail account first.",
+                connectUrl: "/gmail/connect",
+            });
+        }
+        const senderEmail = userRows[0].email;
         await db_1.db.query(`
       INSERT INTO email_batches
       (id, user_id, sender_email, subject, body, start_time,
@@ -41,7 +57,7 @@ async function scheduleEmails(req, res) {
         (id, batch_id, recipient_email, scheduled_at)
         VALUES ($1,$2,$3,$4)
         `, [jobId, batchId, recipients[i], scheduledAt]);
-            const delayMs = scheduledAt.getTime() - Date.now();
+            const delayMs = Math.max(scheduledAt.getTime() - Date.now(), 0);
             const bullJob = await queue_1.emailQueue.add("send-email", { emailJobId: jobId }, { delay: Math.max(delayMs, 0) });
             await db_1.db.query("UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2", [bullJob.id, jobId]);
         }

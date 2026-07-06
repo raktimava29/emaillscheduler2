@@ -48,6 +48,7 @@ export function startWorker() {
       const { rows: batchRows } = await db.query(
         `
         SELECT
+          b.user_id,
           b.sender_email,
           b.subject,
           b.body,
@@ -64,6 +65,7 @@ export function startWorker() {
       if (batchRows.length === 0) return;
 
       const {
+        user_id,
         sender_email,
         subject,
         body,
@@ -135,6 +137,22 @@ export function startWorker() {
         );
 
       } catch (err) {
+          if (
+            err instanceof Error &&
+            (err as any).code === "GMAIL_TOKEN_INVALID"
+          ) {
+            console.log(`Invalid Gmail refresh token for ${sender_email}. Clearing token...`);
+
+            await db.query(
+              `
+              UPDATE users
+              SET gmail_refresh_token = NULL
+              WHERE id = $1
+              RETURNING id, email;
+              `,
+              [user_id]
+            );
+        }
         console.error(`Email ${emailJob.id} attempt failed`);
 
         // Only mark permanently failed after BullMQ has exhausted retries.
@@ -148,7 +166,11 @@ export function startWorker() {
             `,
             [
               emailJob.id,
-              err instanceof Error ? err.message : "Unknown error",
+              (err as any).code === "GMAIL_TOKEN_INVALID"
+                ? "Reconnect Gmail"
+                : err instanceof Error
+                ? err.message
+                : "Unknown error",
             ]
           );
 
