@@ -9,10 +9,17 @@ var router = express_1.Router();
 router.get("/google", passport_1["default"].authenticate("google", {
     scope: ["profile", "email"]
 }));
-router.get("/google/callback", function (req, _res, next) {
-    console.log("LOGIN CALLBACK");
-    console.log(req.originalUrl);
-    console.log(req.query);
+router.get("/google/callback", function (req, res, next) {
+    var _a = req.query, iss = _a.iss, code = _a.code;
+    if (!code) {
+        console.warn("OAuth callback missing code:", req.query);
+        return res.redirect(security_1.frontendUrl);
+    }
+    if (typeof iss === "string" &&
+        iss !== "https://accounts.google.com") {
+        console.warn("Ignoring invalid OAuth callback:", req.query);
+        return res.redirect(security_1.frontendUrl);
+    }
     next();
 }, passport_1["default"].authenticate("google", {
     session: false,

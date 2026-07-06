@@ -15,10 +15,22 @@ router.get(
 
 router.get(
   "/google/callback",
-  (req, _res, next) => {
-    console.log("LOGIN CALLBACK");
-    console.log(req.originalUrl);
-    console.log(req.query);
+  (req, res, next) => {
+    const { iss, code } = req.query;
+    
+    if (!code) {
+      console.warn("OAuth callback missing code:", req.query);
+      return res.redirect(frontendUrl);
+    }
+
+    if (
+      typeof iss === "string" &&
+      iss !== "https://accounts.google.com"
+    ) {
+      console.warn("Ignoring invalid OAuth callback:", req.query);
+      return res.redirect(frontendUrl);
+    }
+
     next();
   },
   passport.authenticate("google", {
