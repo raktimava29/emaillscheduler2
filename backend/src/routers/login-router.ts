@@ -15,6 +15,12 @@ router.get(
 
 router.get(
   "/google/callback",
+  (req, _res, next) => {
+    console.log("LOGIN CALLBACK");
+    console.log(req.originalUrl);
+    console.log(req.query);
+    next();
+  },
   passport.authenticate("google", {
     session: false,
     failureRedirect: frontendUrl,
