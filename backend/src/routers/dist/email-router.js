@@ -1,11 +1,12 @@
 "use strict";
 exports.__esModule = true;
 var express_1 = require("express");
+var upload_1 = require("../middleware/upload");
 var email_controller_1 = require("../controllers/email-controller");
 var auth_1 = require("../middleware/auth");
 var email_generation_controller_1 = require("../controllers/email-generation-controller");
 var router = express_1.Router();
-router.post("/schedule", auth_1.requireAuth, email_controller_1.scheduleEmails);
+router.post("/schedule", auth_1.requireAuth, upload_1.upload.single("resumeFile"), email_controller_1.scheduleEmails);
 router.get("/scheduled", auth_1.requireAuth, email_controller_1.getScheduledEmails);
 router.get("/sent", auth_1.requireAuth, email_controller_1.getSentEmails);
 router.get("/:id", auth_1.requireAuth, email_controller_1.getEmailById);

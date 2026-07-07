@@ -2,17 +2,24 @@ import { Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { db } from "../config/db";
 import { emailQueue } from "../config/queue";
+import { deleteResume, uploadResume } from "../services/storage-service";
 
 export async function scheduleEmails(req: Request, res: Response) {
+  
+  console.log(req.body);
+  console.log(req.file);
   try {
     const {
       subject,
       body,
       startTime,
       delayBetweenEmailsSeconds,
-      recipients,
       hourlyLimit = 100,
     } = req.body;
+
+    const recipients = Array.isArray(req.body.recipients)
+    ? req.body.recipients
+    : [req.body.recipients];
 
     if (!recipients || recipients.length === 0) {
       return res.status(400).json({ error: "No recipients provided" });
@@ -44,13 +51,31 @@ export async function scheduleEmails(req: Request, res: Response) {
     }
 
     const senderEmail = userRows[0].email;
+
+    let resumePath: string | null = null;
+    let resumeFilename: string | null = null;
+
+    try {
+      if (req.file) {
+        const uploadedResume = await uploadResume(req.file);
+
+        resumePath = uploadedResume.path;
+        resumeFilename = uploadedResume.fileName;
+      }
+    } catch (err) {
+      if (resumePath) {
+          await deleteResume(resumePath);
+      }
+
+      throw err;
+  }
     
     await db.query(
       `
       INSERT INTO email_batches
       (id, user_id, sender_email, subject, body, start_time,
-       delay_between_emails_seconds, hourly_limit, total_emails)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       delay_between_emails_seconds, hourly_limit, total_emails, resume_path, resume_filename)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       `,
       [
         batchId,
@@ -62,6 +87,8 @@ export async function scheduleEmails(req: Request, res: Response) {
         delayBetweenEmailsSeconds,
         hourlyLimit,
         recipients.length,
+        resumePath,
+        resumeFilename
       ]
     );
 

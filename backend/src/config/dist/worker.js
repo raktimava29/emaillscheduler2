@@ -43,6 +43,7 @@ var dotenv_1 = require("dotenv");
 var db_1 = require("./db");
 var queue_1 = require("./queue");
 var gmail_service_1 = require("../services/gmail-service");
+var storage_service_1 = require("../services/storage-service");
 dotenv_1["default"].config();
 function getHourKey(senderEmail, date) {
     var yyyy = date.getFullYear();
@@ -63,26 +64,26 @@ function startWorker() {
         maxRetriesPerRequest: null
     });
     var worker = new bullmq_1.Worker("email-queue", function (job) { return __awaiter(_this, void 0, void 0, function () {
-        var emailJobId, jobRows, emailJob, batchRows, _a, user_id, sender_email, subject, body, hourly_limit, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, err_1;
-        var _b;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
+        var emailJobId, jobRows, emailJob, batchRows, _a, user_id, sender_email, subject, body, hourly_limit, resume_path, resume_filename, gmail_refresh_token, now, hourKey, currentCount, nextRun, lock, attachment, _b, err_1;
+        var _c;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
                 case 0:
                     emailJobId = job.data.emailJobId;
                     return [4 /*yield*/, db_1.db.query("SELECT * FROM email_jobs WHERE id = $1", [emailJobId])];
                 case 1:
-                    jobRows = (_c.sent()).rows;
+                    jobRows = (_d.sent()).rows;
                     if (jobRows.length === 0)
                         return [2 /*return*/];
                     emailJob = jobRows[0];
                     if (emailJob.status !== "scheduled")
                         return [2 /*return*/];
-                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.user_id,\n          b.sender_email,\n          b.subject,\n          b.body,\n          b.hourly_limit,\n          u.gmail_refresh_token\n        FROM email_batches b\n        JOIN users u\n          ON b.user_id = u.id\n        WHERE b.id = $1\n        ", [emailJob.batch_id])];
+                    return [4 /*yield*/, db_1.db.query("\n        SELECT\n          b.user_id,\n          b.sender_email,\n          b.subject,\n          b.body,\n          b.hourly_limit,\n          b.resume_path,\n          b.resume_filename,\n          u.gmail_refresh_token\n        FROM email_batches b\n        JOIN users u\n          ON b.user_id = u.id\n        WHERE b.id = $1\n        ", [emailJob.batch_id])];
                 case 2:
-                    batchRows = (_c.sent()).rows;
+                    batchRows = (_d.sent()).rows;
                     if (batchRows.length === 0)
                         return [2 /*return*/];
-                    _a = batchRows[0], user_id = _a.user_id, sender_email = _a.sender_email, subject = _a.subject, body = _a.body, hourly_limit = _a.hourly_limit, gmail_refresh_token = _a.gmail_refresh_token;
+                    _a = batchRows[0], user_id = _a.user_id, sender_email = _a.sender_email, subject = _a.subject, body = _a.body, hourly_limit = _a.hourly_limit, resume_path = _a.resume_path, resume_filename = _a.resume_filename, gmail_refresh_token = _a.gmail_refresh_token;
                     if (!gmail_refresh_token) {
                         throw new Error("User has not connected Gmail.");
                     }
@@ -90,63 +91,76 @@ function startWorker() {
                     hourKey = getHourKey(sender_email, now);
                     return [4 /*yield*/, redis.incr(hourKey)];
                 case 3:
-                    currentCount = _c.sent();
+                    currentCount = _d.sent();
                     if (!(currentCount === 1)) return [3 /*break*/, 5];
                     return [4 /*yield*/, redis.expire(hourKey, 3600)];
                 case 4:
-                    _c.sent();
-                    _c.label = 5;
+                    _d.sent();
+                    _d.label = 5;
                 case 5:
                     if (!(currentCount > hourly_limit)) return [3 /*break*/, 8];
                     nextRun = startOfNextHour(now);
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET scheduled_at = $1 WHERE id = $2", [nextRun, emailJob.id])];
                 case 6:
-                    _c.sent();
+                    _d.sent();
                     return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: emailJob.id }, {
                             delay: Math.max(nextRun.getTime() - Date.now(), 0)
                         })];
                 case 7:
-                    _c.sent();
+                    _d.sent();
                     return [2 /*return*/];
                 case 8: return [4 /*yield*/, db_1.db.query("\n        UPDATE email_jobs\n        SET status = 'processing'\n        WHERE id = $1\n          AND status = 'scheduled'\n        ", [emailJob.id])];
                 case 9:
-                    lock = _c.sent();
+                    lock = _d.sent();
                     if (lock.rowCount === 0)
                         return [2 /*return*/];
-                    _c.label = 10;
+                    _d.label = 10;
                 case 10:
-                    _c.trys.push([10, 13, , 18]);
+                    _d.trys.push([10, 15, , 20]);
                     console.log("Sending email " + emailJob.id + "...");
-                    return [4 /*yield*/, gmail_service_1.sendEmail({
-                            from: sender_email,
-                            to: emailJob.recipient_email,
-                            subject: subject,
-                            text: body,
-                            refreshToken: gmail_refresh_token
-                        })];
+                    attachment = void 0;
+                    if (!resume_path) return [3 /*break*/, 12];
+                    console.log("Downloading resume: " + resume_path);
+                    _b = {
+                        filename: resume_filename
+                    };
+                    return [4 /*yield*/, storage_service_1.downloadResume(resume_path)];
                 case 11:
-                    _c.sent();
+                    attachment = (_b.content = _d.sent(),
+                        _b);
+                    console.log("Resume downloaded successfully.");
+                    _d.label = 12;
+                case 12: return [4 /*yield*/, gmail_service_1.sendEmail({
+                        from: sender_email,
+                        to: emailJob.recipient_email,
+                        subject: subject,
+                        text: body,
+                        refreshToken: gmail_refresh_token,
+                        attachment: attachment
+                    })];
+                case 13:
+                    _d.sent();
                     console.log("Email " + emailJob.id + " sent via Gmail API");
                     console.log("Marking " + emailJob.id + " as sent...");
                     return [4 /*yield*/, db_1.db.query("\n          UPDATE email_jobs\n          SET status = 'sent',\n              sent_at = NOW()\n          WHERE id = $1\n          ", [emailJob.id])];
-                case 12:
-                    _c.sent();
+                case 14:
+                    _d.sent();
                     console.log("Marked " + emailJob.id + " as sent");
-                    return [3 /*break*/, 18];
-                case 13:
-                    err_1 = _c.sent();
+                    return [3 /*break*/, 20];
+                case 15:
+                    err_1 = _d.sent();
                     console.error("Worker caught error:");
                     console.error(err_1);
                     if (!(err_1 instanceof Error &&
-                        err_1.code === "GMAIL_TOKEN_INVALID")) return [3 /*break*/, 15];
+                        err_1.code === "GMAIL_TOKEN_INVALID")) return [3 /*break*/, 17];
                     console.log("Invalid Gmail refresh token for " + sender_email + ". Clearing token...");
                     return [4 /*yield*/, db_1.db.query("\n              UPDATE users\n              SET gmail_refresh_token = NULL\n              WHERE id = $1\n              RETURNING id, email;\n              ", [user_id])];
-                case 14:
-                    _c.sent();
-                    _c.label = 15;
-                case 15:
+                case 16:
+                    _d.sent();
+                    _d.label = 17;
+                case 17:
                     console.error("Email " + emailJob.id + " attempt failed");
-                    if (!(job.attemptsMade + 1 >= ((_b = job.opts.attempts) !== null && _b !== void 0 ? _b : 1))) return [3 /*break*/, 17];
+                    if (!(job.attemptsMade + 1 >= ((_c = job.opts.attempts) !== null && _c !== void 0 ? _c : 1))) return [3 /*break*/, 19];
                     return [4 /*yield*/, db_1.db.query("\n            UPDATE email_jobs\n            SET status = 'failed',\n                error_message = $2\n            WHERE id = $1\n            ", [
                             emailJob.id,
                             err_1.code === "GMAIL_TOKEN_INVALID"
@@ -155,12 +169,12 @@ function startWorker() {
                                     ? err_1.message
                                     : "Unknown error",
                         ])];
-                case 16:
-                    _c.sent();
+                case 18:
+                    _d.sent();
                     console.error("Email " + emailJob.id + " permanently failed");
-                    _c.label = 17;
-                case 17: throw err_1;
-                case 18: return [2 /*return*/];
+                    _d.label = 19;
+                case 19: throw err_1;
+                case 20: return [2 /*return*/];
             }
         });
     }); }, {

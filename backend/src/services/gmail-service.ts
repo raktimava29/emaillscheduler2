@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { oauth2Client } from "../config/gmail";
+import { randomUUID } from "crypto";
 
 interface SendEmailParams {
   from: string;
@@ -7,6 +8,10 @@ interface SendEmailParams {
   subject: string;
   text: string;
   refreshToken: string;
+  attachment?: {
+    filename: string;
+    content: Buffer;
+  };
 }
 
 export async function sendEmail({
@@ -15,6 +20,7 @@ export async function sendEmail({
   subject,
   text,
   refreshToken,
+  attachment
 }: SendEmailParams) {
   try {
     oauth2Client.setCredentials({
@@ -26,15 +32,46 @@ export async function sendEmail({
       auth: oauth2Client,
     });
 
-    const message = [
-      `From: ${from}`,
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      "MIME-Version: 1.0",
-      "Content-Type: text/plain; charset=UTF-8",
-      "",
-      text,
-    ].join("\r\n");
+    let message: string;
+
+    if (!attachment) {
+      message = [
+        `From: ${from}`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        "MIME-Version: 1.0",
+        "Content-Type: text/plain; charset=UTF-8",
+        "",
+        text,
+      ].join("\r\n");
+    } else {
+      const boundary = `boundary_${randomUUID()}`;
+
+      message = [
+        `From: ${from}`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        "MIME-Version: 1.0",
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        "",
+
+        `--${boundary}`,
+        "Content-Type: text/plain; charset=UTF-8",
+        "",
+        text,
+        "",
+
+        `--${boundary}`,
+        "Content-Type: application/octet-stream",
+        "Content-Transfer-Encoding: base64",
+        `Content-Disposition: attachment; filename="${attachment.filename}"`,
+        "",
+        attachment.content.toString("base64"),
+        "",
+
+        `--${boundary}--`,
+      ].join("\r\n");
+    }
 
     const raw = Buffer.from(message)
       .toString("base64")

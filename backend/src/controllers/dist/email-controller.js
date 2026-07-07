@@ -40,21 +40,29 @@ exports.getEmailById = exports.getSentEmails = exports.getScheduledEmails = expo
 var crypto_1 = require("crypto");
 var db_1 = require("../config/db");
 var queue_1 = require("../config/queue");
+var storage_service_1 = require("../services/storage-service");
 function scheduleEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, subject, body, startTime, delayBetweenEmailsSeconds, recipients, _b, hourlyLimit, userId, batchId, userRows, senderEmail, i, jobId, scheduledAt, delayMs, bullJob, err_1;
+        var _a, subject, body, startTime, delayBetweenEmailsSeconds, _b, hourlyLimit, recipients, userId, batchId, userRows, senderEmail, resumePath, resumeFilename, uploadedResume, err_1, i, jobId, scheduledAt, delayMs, bullJob, err_2;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 9, , 10]);
-                    _a = req.body, subject = _a.subject, body = _a.body, startTime = _a.startTime, delayBetweenEmailsSeconds = _a.delayBetweenEmailsSeconds, recipients = _a.recipients, _b = _a.hourlyLimit, hourlyLimit = _b === void 0 ? 100 : _b;
+                    console.log(req.body);
+                    console.log(req.file);
+                    _c.label = 1;
+                case 1:
+                    _c.trys.push([1, 17, , 18]);
+                    _a = req.body, subject = _a.subject, body = _a.body, startTime = _a.startTime, delayBetweenEmailsSeconds = _a.delayBetweenEmailsSeconds, _b = _a.hourlyLimit, hourlyLimit = _b === void 0 ? 100 : _b;
+                    recipients = Array.isArray(req.body.recipients)
+                        ? req.body.recipients
+                        : [req.body.recipients];
                     if (!recipients || recipients.length === 0) {
                         return [2 /*return*/, res.status(400).json({ error: "No recipients provided" })];
                     }
                     userId = req.user.userId;
                     batchId = crypto_1.randomUUID();
                     return [4 /*yield*/, db_1.db.query("\n      SELECT \n        email,\n        gmail_refresh_token\n      FROM users\n      WHERE id = $1\n      ", [userId])];
-                case 1:
+                case 2:
                     userRows = (_c.sent()).rows;
                     if (userRows.length === 0 ||
                         !userRows[0].gmail_refresh_token) {
@@ -65,51 +73,74 @@ function scheduleEmails(req, res) {
                             })];
                     }
                     senderEmail = userRows[0].email;
-                    return [4 /*yield*/, db_1.db.query("\n      INSERT INTO email_batches\n      (id, user_id, sender_email, subject, body, start_time,\n       delay_between_emails_seconds, hourly_limit, total_emails)\n      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\n      ", [
-                            batchId,
-                            userId,
-                            senderEmail,
-                            subject,
-                            body,
-                            new Date(startTime),
-                            delayBetweenEmailsSeconds,
-                            hourlyLimit,
-                            recipients.length,
-                        ])];
-                case 2:
-                    _c.sent();
-                    i = 0;
+                    resumePath = null;
+                    resumeFilename = null;
                     _c.label = 3;
                 case 3:
-                    if (!(i < recipients.length)) return [3 /*break*/, 8];
+                    _c.trys.push([3, 6, , 9]);
+                    if (!req.file) return [3 /*break*/, 5];
+                    return [4 /*yield*/, storage_service_1.uploadResume(req.file)];
+                case 4:
+                    uploadedResume = _c.sent();
+                    resumePath = uploadedResume.path;
+                    resumeFilename = uploadedResume.fileName;
+                    _c.label = 5;
+                case 5: return [3 /*break*/, 9];
+                case 6:
+                    err_1 = _c.sent();
+                    if (!resumePath) return [3 /*break*/, 8];
+                    return [4 /*yield*/, storage_service_1.deleteResume(resumePath)];
+                case 7:
+                    _c.sent();
+                    _c.label = 8;
+                case 8: throw err_1;
+                case 9: return [4 /*yield*/, db_1.db.query("\n      INSERT INTO email_batches\n      (id, user_id, sender_email, subject, body, start_time,\n       delay_between_emails_seconds, hourly_limit, total_emails, resume_path, resume_filename)\n      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)\n      ", [
+                        batchId,
+                        userId,
+                        senderEmail,
+                        subject,
+                        body,
+                        new Date(startTime),
+                        delayBetweenEmailsSeconds,
+                        hourlyLimit,
+                        recipients.length,
+                        resumePath,
+                        resumeFilename
+                    ])];
+                case 10:
+                    _c.sent();
+                    i = 0;
+                    _c.label = 11;
+                case 11:
+                    if (!(i < recipients.length)) return [3 /*break*/, 16];
                     jobId = crypto_1.randomUUID();
                     scheduledAt = new Date(new Date(startTime).getTime() +
                         i * delayBetweenEmailsSeconds * 1000);
                     return [4 /*yield*/, db_1.db.query("\n        INSERT INTO email_jobs\n        (id, batch_id, recipient_email, scheduled_at)\n        VALUES ($1,$2,$3,$4)\n        ", [jobId, batchId, recipients[i], scheduledAt])];
-                case 4:
+                case 12:
                     _c.sent();
                     delayMs = Math.max(scheduledAt.getTime() - Date.now(), 0);
                     return [4 /*yield*/, queue_1.emailQueue.add("send-email", { emailJobId: jobId }, { delay: Math.max(delayMs, 0) })];
-                case 5:
+                case 13:
                     bullJob = _c.sent();
                     return [4 /*yield*/, db_1.db.query("UPDATE email_jobs SET bull_job_id = $1 WHERE id = $2", [bullJob.id, jobId])];
-                case 6:
+                case 14:
                     _c.sent();
-                    _c.label = 7;
-                case 7:
+                    _c.label = 15;
+                case 15:
                     i++;
-                    return [3 /*break*/, 3];
-                case 8: return [2 /*return*/, res.json({
+                    return [3 /*break*/, 11];
+                case 16: return [2 /*return*/, res.json({
                         message: "Emails scheduled",
                         batchId: batchId,
                         total: recipients.length
                     })];
-                case 9:
-                    err_1 = _c.sent();
-                    console.error("Schedule error:", err_1);
+                case 17:
+                    err_2 = _c.sent();
+                    console.error("Schedule error:", err_2);
                     res.status(500).json({ error: "Failed to schedule emails" });
-                    return [3 /*break*/, 10];
-                case 10: return [2 /*return*/];
+                    return [3 /*break*/, 18];
+                case 18: return [2 /*return*/];
             }
         });
     });
@@ -117,7 +148,7 @@ function scheduleEmails(req, res) {
 exports.scheduleEmails = scheduleEmails;
 function getScheduledEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var userId, rows, err_2;
+        var userId, rows, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -129,8 +160,8 @@ function getScheduledEmails(req, res) {
                     res.json(rows);
                     return [3 /*break*/, 3];
                 case 2:
-                    err_2 = _a.sent();
-                    console.error("Fetch scheduled error:", err_2);
+                    err_3 = _a.sent();
+                    console.error("Fetch scheduled error:", err_3);
                     res.status(500).json({ error: "Failed to fetch scheduled emails" });
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
@@ -141,7 +172,7 @@ function getScheduledEmails(req, res) {
 exports.getScheduledEmails = getScheduledEmails;
 function getSentEmails(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var userId, rows, err_3;
+        var userId, rows, err_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -153,8 +184,8 @@ function getSentEmails(req, res) {
                     res.json(rows);
                     return [3 /*break*/, 3];
                 case 2:
-                    err_3 = _a.sent();
-                    console.error("Fetch sent error:", err_3);
+                    err_4 = _a.sent();
+                    console.error("Fetch sent error:", err_4);
                     res.status(500).json({ error: "Failed to fetch sent emails" });
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];

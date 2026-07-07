@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { db } from "./db";
 import { emailQueue } from "./queue";
 import { sendEmail } from "../services/gmail-service";
+import { downloadResume } from "../services/storage-service";
 
 dotenv.config();
 
@@ -53,6 +54,8 @@ export function startWorker() {
           b.subject,
           b.body,
           b.hourly_limit,
+          b.resume_path,
+          b.resume_filename,
           u.gmail_refresh_token
         FROM email_batches b
         JOIN users u
@@ -70,6 +73,8 @@ export function startWorker() {
         subject,
         body,
         hourly_limit,
+        resume_path,
+        resume_filename,
         gmail_refresh_token,
       } = batchRows[0];
 
@@ -119,12 +124,31 @@ export function startWorker() {
 
       try {
         console.log(`Sending email ${emailJob.id}...`);
+        let attachment:
+            | {
+                  filename: string;
+                  content: Buffer;
+              }
+            | undefined;
+
+        if (resume_path) {
+            console.log(`Downloading resume: ${resume_path}`);
+            
+            attachment = {
+                filename: resume_filename,
+                content: await downloadResume(resume_path),
+            };
+
+            console.log("Resume downloaded successfully.");
+        }
+
         await sendEmail({
           from: sender_email,
           to: emailJob.recipient_email,
           subject,
           text: body,
           refreshToken: gmail_refresh_token,
+          attachment
         });
         console.log(`Email ${emailJob.id} sent via Gmail API`);
 

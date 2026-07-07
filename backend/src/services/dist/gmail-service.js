@@ -39,11 +39,12 @@ exports.__esModule = true;
 exports.sendEmail = void 0;
 var googleapis_1 = require("googleapis");
 var gmail_1 = require("../config/gmail");
+var crypto_1 = require("crypto");
 function sendEmail(_a) {
     var _b, _c, _d;
-    var from = _a.from, to = _a.to, subject = _a.subject, text = _a.text, refreshToken = _a.refreshToken;
+    var from = _a.from, to = _a.to, subject = _a.subject, text = _a.text, refreshToken = _a.refreshToken, attachment = _a.attachment;
     return __awaiter(this, void 0, void 0, function () {
-        var gmail, message, raw, response, error_1;
+        var gmail, message, boundary, raw, response, error_1;
         return __generator(this, function (_e) {
             switch (_e.label) {
                 case 0:
@@ -55,15 +56,42 @@ function sendEmail(_a) {
                         version: "v1",
                         auth: gmail_1.oauth2Client
                     });
-                    message = [
-                        "From: " + from,
-                        "To: " + to,
-                        "Subject: " + subject,
-                        "MIME-Version: 1.0",
-                        "Content-Type: text/plain; charset=UTF-8",
-                        "",
-                        text,
-                    ].join("\r\n");
+                    message = void 0;
+                    if (!attachment) {
+                        message = [
+                            "From: " + from,
+                            "To: " + to,
+                            "Subject: " + subject,
+                            "MIME-Version: 1.0",
+                            "Content-Type: text/plain; charset=UTF-8",
+                            "",
+                            text,
+                        ].join("\r\n");
+                    }
+                    else {
+                        boundary = "boundary_" + crypto_1.randomUUID();
+                        message = [
+                            "From: " + from,
+                            "To: " + to,
+                            "Subject: " + subject,
+                            "MIME-Version: 1.0",
+                            "Content-Type: multipart/mixed; boundary=\"" + boundary + "\"",
+                            "",
+                            "--" + boundary,
+                            "Content-Type: text/plain; charset=UTF-8",
+                            "",
+                            text,
+                            "",
+                            "--" + boundary,
+                            "Content-Type: application/octet-stream",
+                            "Content-Transfer-Encoding: base64",
+                            "Content-Disposition: attachment; filename=\"" + attachment.filename + "\"",
+                            "",
+                            attachment.content.toString("base64"),
+                            "",
+                            "--" + boundary + "--",
+                        ].join("\r\n");
+                    }
                     raw = Buffer.from(message)
                         .toString("base64")
                         .replace(/\+/g, "-")

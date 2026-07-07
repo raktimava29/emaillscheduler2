@@ -10,6 +10,7 @@ export default function Compose() {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [showScheduler, setShowScheduler] = useState(false);
   const [scheduledTime, setScheduledTime] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -65,26 +66,48 @@ export default function Compose() {
     }
 
     setIsSending(true);
+
     try {
-      
-      await apiFetch("/emails/schedule", {
-        method: "POST",
-        body: JSON.stringify({
-          subject,
-          body,
-          startTime: scheduledTime ?? new Date().toISOString(),
-          delayBetweenEmailsSeconds: 2,
-          recipients,
-        }),
-      });
+        const formData = new FormData();
 
-      alert(
-        scheduledTime
-          ? "Emails scheduled successfully"
-          : "Emails sent successfully"
-      );
+        formData.append("subject", subject);
+        formData.append("body", body);
 
-      navigate("/dashboard");
+        formData.append(
+            "startTime",
+            scheduledTime ?? new Date().toISOString()
+        );
+
+        formData.append(
+            "delayBetweenEmailsSeconds",
+            "2"
+        );
+
+        formData.append(
+            "hourlyLimit",
+            "100"
+        );
+
+        recipients.forEach((recipient) => {
+            formData.append("recipients", recipient);
+        });
+
+        if (resumeFile) {
+            formData.append("resumeFile", resumeFile);
+        }
+
+        await apiFetch("/emails/schedule", {
+            method: "POST",
+            body: formData,
+        });
+
+        alert(
+            scheduledTime
+                ? "Emails scheduled successfully"
+                : "Emails sent successfully"
+        );
+
+        navigate("/dashboard");
     } catch (err: unknown) {
         setIsSending(false);
 
@@ -357,6 +380,7 @@ export default function Compose() {
               setTo(email.recipient ?? "");
               setSubject(email.subject);
               setBody(email.body);
+              setResumeFile(email.resumeFile);
             }}
         />
     )}

@@ -15,6 +15,7 @@ interface AIModalProps {
         recipient: string | null;
         subject: string;
         body: string;
+        resumeFile: File;
     }) => void;
 }
 
@@ -81,6 +82,7 @@ export default function AIModal({
                 recipient: job.recipientEmail,
                 subject: email.subject,
                 body: email.body,
+                resumeFile: resumeFile!
             });
 
             handleClose();
