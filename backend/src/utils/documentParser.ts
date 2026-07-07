@@ -51,10 +51,46 @@ async function extractPdfContent(
 
     const visibleLinks =
         text.match(
-            /(https?:\/\/[^\s]+|www\.[^\s]+|(?:github|linkedin|leetcode|codeforces)\.com\/[^\s]+)/gi
+            /(https?:\/\/[^\s]+|www\.[^\s]+|(?:github(?:\.com)?|linkedin(?:\.com)?\/?(?:in)?|leetcode(?:\.com)?|codeforces(?:\.com)?)\/[^\s]+)/gi
         ) ?? [];
 
-    for (const url of visibleLinks) {
+    for (let url of visibleLinks) {
+        if (
+            url.startsWith("github/")
+        ) {
+            url = url.replace(
+                "github/",
+                "https://github.com/"
+            );
+        }
+
+        if (
+            url.startsWith("linkedin/")
+        ) {
+            url = url.replace(
+                "linkedin/",
+                "https://linkedin.com/in/"
+            );
+        }
+
+        if (
+            url.startsWith("leetcode/")
+        ) {
+            url = url.replace(
+                "leetcode/",
+                "https://leetcode.com/"
+            );
+        }
+
+        if (
+            url.startsWith("codeforces/")
+        ) {
+            url = url.replace(
+                "codeforces/",
+                "https://codeforces.com/profile/"
+            );
+        }
+
         if (!links.some(link => link.url === url)) {
             links.push({
                 url,

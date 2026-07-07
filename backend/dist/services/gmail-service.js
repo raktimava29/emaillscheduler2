@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendEmail = sendEmail;
 const googleapis_1 = require("googleapis");
 const gmail_1 = require("../config/gmail");
-async function sendEmail({ from, to, subject, text, refreshToken, }) {
+const crypto_1 = require("crypto");
+async function sendEmail({ from, to, subject, text, refreshToken, attachment }) {
     try {
         gmail_1.oauth2Client.setCredentials({
             refresh_token: refreshToken,
@@ -12,15 +13,42 @@ async function sendEmail({ from, to, subject, text, refreshToken, }) {
             version: "v1",
             auth: gmail_1.oauth2Client,
         });
-        const message = [
-            `From: ${from}`,
-            `To: ${to}`,
-            `Subject: ${subject}`,
-            "MIME-Version: 1.0",
-            "Content-Type: text/plain; charset=UTF-8",
-            "",
-            text,
-        ].join("\r\n");
+        let message;
+        if (!attachment) {
+            message = [
+                `From: ${from}`,
+                `To: ${to}`,
+                `Subject: ${subject}`,
+                "MIME-Version: 1.0",
+                "Content-Type: text/plain; charset=UTF-8",
+                "",
+                text,
+            ].join("\r\n");
+        }
+        else {
+            const boundary = `boundary_${(0, crypto_1.randomUUID)()}`;
+            message = [
+                `From: ${from}`,
+                `To: ${to}`,
+                `Subject: ${subject}`,
+                "MIME-Version: 1.0",
+                `Content-Type: multipart/mixed; boundary="${boundary}"`,
+                "",
+                `--${boundary}`,
+                "Content-Type: text/plain; charset=UTF-8",
+                "",
+                text,
+                "",
+                `--${boundary}`,
+                "Content-Type: application/octet-stream",
+                "Content-Transfer-Encoding: base64",
+                `Content-Disposition: attachment; filename="${attachment.filename}"`,
+                "",
+                attachment.content.toString("base64"),
+                "",
+                `--${boundary}--`,
+            ].join("\r\n");
+        }
         const raw = Buffer.from(message)
             .toString("base64")
             .replace(/\+/g, "-")

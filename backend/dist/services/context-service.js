@@ -18,14 +18,40 @@ async function buildCandidateContext(resume, job) {
             },
         ],
     });
-    const email = resume.links.find(link => link.url.startsWith("mailto:"))?.url.replace("mailto:", "") ?? null;
     const content = completion.choices[0].message.content ?? "{}";
-    const parsed = JSON.parse(content);
-    return candidate_selection_schema_1.CandidateContextSchema.parse({
-        ...parsed,
-        phone: resume.phone,
-        email,
-        links: resume.links,
-        contactName: job.contactName
-    });
+    let parsed;
+    try {
+        parsed = JSON.parse(content);
+    }
+    catch {
+        throw new Error("LLM returned invalid JSON.");
+    }
+    console.log("========== Context LLM Output ==========");
+    console.log(JSON.stringify(parsed.matchingSkills, null, 2));
+    console.log("========================================");
+    // Normalize invalid matching skills
+    if (Array.isArray(parsed.matchingSkills)) {
+        const validSkills = [];
+        parsed.missingSkills ?? (parsed.missingSkills = []);
+        for (const skill of parsed.matchingSkills) {
+            if (typeof skill.resumeSkill === "string" &&
+                skill.resumeSkill.trim() !== "") {
+                validSkills.push(skill);
+            }
+            else if (typeof skill.jobSkill === "string" &&
+                !parsed.missingSkills.includes(skill.jobSkill)) {
+                parsed.missingSkills.push(skill.jobSkill);
+            }
+        }
+        parsed.matchingSkills = validSkills;
+    }
+    try {
+        return candidate_selection_schema_1.CandidateContextSchema.parse(parsed);
+    }
+    catch (err) {
+        console.log("========== FULL CONTEXT RESPONSE ==========");
+        console.log(JSON.stringify(parsed, null, 2));
+        console.log("===========================================");
+        throw err;
+    }
 }

@@ -9,10 +9,11 @@ export async function generateEmail(
 ): Promise<EmailResponse> {
     try {
         const response = await gemini.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: buildEmailPrompt(context),
     });
-
+        
+        //console.log(typeof response.text);
         const content = response.text?.trim();
 
         if (!content) {
@@ -32,6 +33,9 @@ export async function generateEmail(
 
         return EmailSchema.parse(parsed);
     } catch (error) {
+        console.error("Email generation error:");
+        console.error(error);
+
         if (error instanceof AIError) {
             throw error;
         }

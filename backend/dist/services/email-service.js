@@ -8,9 +8,10 @@ const errors_1 = require("../utils/errors");
 async function generateEmail(context) {
     try {
         const response = await client_1.gemini.models.generateContent({
-            model: "gemini-3.5-flash",
+            model: "gemini-2.5-flash",
             contents: (0, email_prompt_1.buildEmailPrompt)(context),
         });
+        console.log(typeof response.text);
         const content = response.text?.trim();
         if (!content) {
             throw new errors_1.AIError("EMPTY_AI_RESPONSE", "The AI returned an empty response", 500);
@@ -23,6 +24,8 @@ async function generateEmail(context) {
         return email_schema_1.EmailSchema.parse(parsed);
     }
     catch (error) {
+        console.error("Email generation error:");
+        console.error(error);
         if (error instanceof errors_1.AIError) {
             throw error;
         }

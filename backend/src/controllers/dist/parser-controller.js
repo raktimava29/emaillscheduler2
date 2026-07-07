@@ -64,6 +64,7 @@ function parseController(req, res) {
                     return [4 /*yield*/, documentParser_1.parseDocument(req.body.resumeFile, (_e = files === null || files === void 0 ? void 0 : files.resumeFile) === null || _e === void 0 ? void 0 : _e[0])];
                 case 1:
                     resumeDocument = _g.sent();
+                    console.log("========== Extracted Links ==========");
                     resumeSections = extractSections_1.extractSections(resumeDocument.text);
                     return [4 /*yield*/, resume_service_1.parseResume(resumeDocument.text, resumeSections, resumeDocument.links)];
                 case 2:

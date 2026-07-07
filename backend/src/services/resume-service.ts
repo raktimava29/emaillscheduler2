@@ -32,5 +32,23 @@ export async function parseResume(
 
     const parsed = JSON.parse(content);
 
-    return ResumeParserResponseSchema.parse(parsed);
+    parsed.links = (parsed.links ?? []).filter(
+        (link: any) =>
+            typeof link.url === "string" &&
+            link.url.trim() !== ""
+    );
+
+    console.log("========== Resume LLM Output ==========");
+    // console.log(JSON.stringify(parsed.links, null, 2));
+    // console.log("=======================================");
+
+    try {
+        return ResumeParserResponseSchema.parse(parsed);
+    } catch (err) {
+        console.log("========== FULL AI RESPONSE ==========");
+        // console.log(JSON.stringify(parsed, null, 2));
+        // console.log("======================================");
+
+        throw err;
+    }
 }

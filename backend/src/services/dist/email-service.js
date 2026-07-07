@@ -50,7 +50,7 @@ function generateEmail(context) {
                 case 0:
                     _b.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, client_1.gemini.models.generateContent({
-                            model: "gemini-3.5-flash",
+                            model: "gemini-2.5-flash",
                             contents: email_prompt_1.buildEmailPrompt(context)
                         })];
                 case 1:
@@ -67,6 +67,8 @@ function generateEmail(context) {
                     return [2 /*return*/, email_schema_1.EmailSchema.parse(parsed)];
                 case 2:
                     error_1 = _b.sent();
+                    console.error("Email generation error:");
+                    console.error(error_1);
                     if (error_1 instanceof errors_1.AIError) {
                         throw error_1;
                     }

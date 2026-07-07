@@ -7,9 +7,15 @@ exports.getEmailById = getEmailById;
 const crypto_1 = require("crypto");
 const db_1 = require("../config/db");
 const queue_1 = require("../config/queue");
+const storage_service_1 = require("../services/storage-service");
 async function scheduleEmails(req, res) {
+    console.log(req.body);
+    console.log(req.file);
     try {
-        const { subject, body, startTime, delayBetweenEmailsSeconds, recipients, hourlyLimit = 100, } = req.body;
+        const { subject, body, startTime, delayBetweenEmailsSeconds, hourlyLimit = 100, } = req.body;
+        const recipients = Array.isArray(req.body.recipients)
+            ? req.body.recipients
+            : [req.body.recipients];
         if (!recipients || recipients.length === 0) {
             return res.status(400).json({ error: "No recipients provided" });
         }
@@ -31,11 +37,26 @@ async function scheduleEmails(req, res) {
             });
         }
         const senderEmail = userRows[0].email;
+        let resumePath = null;
+        let resumeFilename = null;
+        try {
+            if (req.file) {
+                const uploadedResume = await (0, storage_service_1.uploadResume)(req.file);
+                resumePath = uploadedResume.path;
+                resumeFilename = uploadedResume.fileName;
+            }
+        }
+        catch (err) {
+            if (resumePath) {
+                await (0, storage_service_1.deleteResume)(resumePath);
+            }
+            throw err;
+        }
         await db_1.db.query(`
       INSERT INTO email_batches
       (id, user_id, sender_email, subject, body, start_time,
-       delay_between_emails_seconds, hourly_limit, total_emails)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       delay_between_emails_seconds, hourly_limit, total_emails, resume_path, resume_filename)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       `, [
             batchId,
             userId,
@@ -46,6 +67,8 @@ async function scheduleEmails(req, res) {
             delayBetweenEmailsSeconds,
             hourlyLimit,
             recipients.length,
+            resumePath,
+            resumeFilename
         ]);
         //Create jobs and schedule BullMQ
         for (let i = 0; i < recipients.length; i++) {

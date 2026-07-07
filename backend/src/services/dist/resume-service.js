@@ -41,11 +41,11 @@ var client_1 = require("../client");
 var resume_prompt_1 = require("../prompts/resume-prompt");
 var resume_schema_1 = require("../schemas/resume-schema");
 function parseResume(rawText, sections, links) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, Promise, function () {
         var completion, content, parsed;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0: return [4 /*yield*/, client_1.groq.chat.completions.create({
                         model: "llama-3.3-70b-versatile",
                         temperature: 0,
@@ -60,10 +60,26 @@ function parseResume(rawText, sections, links) {
                         ]
                     })];
                 case 1:
-                    completion = _b.sent();
+                    completion = _c.sent();
                     content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
                     parsed = JSON.parse(content);
-                    return [2 /*return*/, resume_schema_1.ResumeParserResponseSchema.parse(parsed)];
+                    parsed.links = ((_b = parsed.links) !== null && _b !== void 0 ? _b : []).filter(function (link) {
+                        return typeof link.url === "string" &&
+                            link.url.trim() !== "";
+                    });
+                    console.log("========== Resume LLM Output ==========");
+                    // console.log(JSON.stringify(parsed.links, null, 2));
+                    // console.log("=======================================");
+                    try {
+                        return [2 /*return*/, resume_schema_1.ResumeParserResponseSchema.parse(parsed)];
+                    }
+                    catch (err) {
+                        console.log("========== FULL AI RESPONSE ==========");
+                        // console.log(JSON.stringify(parsed, null, 2));
+                        // console.log("======================================");
+                        throw err;
+                    }
+                    return [2 /*return*/];
             }
         });
     });

@@ -10,6 +10,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./db");
 const queue_1 = require("./queue");
 const gmail_service_1 = require("../services/gmail-service");
+const storage_service_1 = require("../services/storage-service");
 dotenv_1.default.config();
 function getHourKey(senderEmail, date) {
     const yyyy = date.getFullYear();
@@ -43,6 +44,8 @@ function startWorker() {
           b.subject,
           b.body,
           b.hourly_limit,
+          b.resume_path,
+          b.resume_filename,
           u.gmail_refresh_token
         FROM email_batches b
         JOIN users u
@@ -51,7 +54,7 @@ function startWorker() {
         `, [emailJob.batch_id]);
         if (batchRows.length === 0)
             return;
-        const { user_id, sender_email, subject, body, hourly_limit, gmail_refresh_token, } = batchRows[0];
+        const { user_id, sender_email, subject, body, hourly_limit, resume_path, resume_filename, gmail_refresh_token, } = batchRows[0];
         if (!gmail_refresh_token) {
             throw new Error("User has not connected Gmail.");
         }
@@ -79,12 +82,22 @@ function startWorker() {
             return;
         try {
             console.log(`Sending email ${emailJob.id}...`);
+            let attachment;
+            if (resume_path) {
+                console.log(`Downloading resume: ${resume_path}`);
+                attachment = {
+                    filename: resume_filename,
+                    content: await (0, storage_service_1.downloadResume)(resume_path),
+                };
+                console.log("Resume downloaded successfully.");
+            }
             await (0, gmail_service_1.sendEmail)({
                 from: sender_email,
                 to: emailJob.recipient_email,
                 subject,
                 text: body,
                 refreshToken: gmail_refresh_token,
+                attachment
             });
             console.log(`Email ${emailJob.id} sent via Gmail API`);
             console.log(`Marking ${emailJob.id} as sent...`);

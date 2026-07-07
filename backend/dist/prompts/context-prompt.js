@@ -28,9 +28,14 @@ GENERAL RULES
 - Never invent facts.
 - Never infer missing information.
 - Never modify resume content.
+- Never fabricate resume evidence to satisfy a job requirement.
+- If no evidence exists in the resume, place the job skill in missingSkills instead.
 - Preserve the original wording whenever possible.
 - Every field in the output schema must exist.
+- Do not omit fields because their values are unknown.
+- Use null for unknown scalar values.
 - Arrays must always exist.
+- If an array has no items, return an empty array [].
 - confidenceScore must be between 0.0 and 1.0.
 
 --------------------------------------------------
@@ -46,6 +51,30 @@ Rules
 - Do NOT remove any fields.
 - Do NOT infer missing values.
 - Do NOT rewrite any values.
+
+--------------------------------------------------
+CANDIDATE INFORMATION
+--------------------------------------------------
+
+Copy the following values directly from the parsed resume.
+
+Resume field "name" -> Output field "candidateName"
+
+Resume field "phone" -> Output field "phone"
+
+Resume field "email" -> Output field "email"
+
+Resume field "links" -> Output field "links"
+
+Do not modify any values.
+
+If a value is unavailable, return null.
+
+If no links exist, return an empty array.
+
+The contactName must come only from the job description.
+
+If no recruiter or hiring contact is provided, return null.
 
 --------------------------------------------------
 MATCHING RULES
@@ -81,6 +110,12 @@ Git ↔ GitHub (when used for version control)
 
 Docker Compose ↔ Docker
 
+Java and JavaScript are completely different languages.
+
+Never treat them as equivalent.
+
+Do not match one to the other under any circumstance.
+
 Use evidence from ALL parts of the resume:
 
 - Skills
@@ -92,10 +127,12 @@ A skill is considered matched if it is demonstrated anywhere in the resume.
 
 When returning matchingSkills:
 
-- Use the wording exactly as it appears in the resume.
-- Never rewrite resume terminology using the wording from the job.
+- Each entry must contain BOTH the job skill and the matching resume skill.
+- Use the job wording exactly as it appears in the job description.
+- Use the resume wording exactly as it appears in the resume.
 - Never invent technologies.
-- Never include duplicate skills.
+- Never return null or empty strings.
+- Never include duplicate jobSkill/resumeSkill pairs.
 
 Examples
 
@@ -105,51 +142,98 @@ ReactJS
 Resume:
 React.js
 
-Output:
-React.js
+Output
 
-Job:
-HTML/CSS
-
-Resume:
-HTML5
-CSS3
-
-Output:
-[
-  "HTML5",
-  "CSS3"
-]
-
-missingSkills
-
-Include ONLY skills that satisfy ALL of the following:
-
-- Explicitly required by the selected role.
-- Not demonstrated anywhere in the resume.
-- No equivalent technology exists in the resume.
-
-Never mark equivalent technologies as missing.
-
-Example
+{
+  "jobSkill": "ReactJS",
+  "resumeSkill": "React.js"
+}
 
 Job:
 SQL
 
 Resume:
 PostgreSQL
-MySQL
 
 Output
 
-matchingSkills:
+{
+  "jobSkill": "SQL",
+  "resumeSkill": "PostgreSQL"
+}
+
+Every required job skill MUST belong to exactly ONE category.
+
+Category 1:
+matchingSkills
+
+If the resume demonstrates the skill or an equivalent technology, create exactly one object:
+
+{
+  "jobSkill": "...",
+  "resumeSkill": "..."
+}
+
+Category 2:
+missingSkills
+
+If the resume does NOT demonstrate the skill, do NOT create a matchingSkills object.
+
+Instead, add ONLY the job skill name to missingSkills.
+
+A missing skill MUST NOT also appear in matchingSkills.
+
+If resume evidence cannot be found, delete the matchingSkills object entirely rather than using null, an empty string, or a guessed value.
+
+Rules
+
+- Every job skill appears exactly once.
+- A job skill can never appear in both matchingSkills and missingSkills.
+- Never create a matchingSkills object whose resumeSkill is null.
+- Never create a matchingSkills object whose resumeSkill is an empty string.
+- Never invent a resumeSkill.
+- Never guess a resumeSkill.
+- If no matching resume evidence exists, place the job skill in missingSkills instead.
+
+Example
+
+Job Skills
+
+ReactJS
+SQL
+Docker
+Java
+
+Resume Skills
+
+React.js
+PostgreSQL
+Docker
+
+Output
+
+matchingSkills
+
 [
-  "PostgreSQL",
-  "MySQL"
+  {
+    "jobSkill": "ReactJS",
+    "resumeSkill": "React.js"
+  },
+  {
+    "jobSkill": "SQL",
+    "resumeSkill": "PostgreSQL"
+  },
+  {
+    "jobSkill": "Docker",
+    "resumeSkill": "Docker"
+  }
 ]
 
-missingSkills:
-[]
+missingSkills
+
+[
+  "Java"
+]
 
 --------------------------------------------------
 PROJECT SELECTION
@@ -249,15 +333,32 @@ ${JSON.stringify(resume, null, 2)}
 VALIDATION RULES
 --------------------------------------------------
 
+- Every required top-level field in the output schema exists exactly once.
+- Every job skill appears exactly once.
+- A job skill cannot appear in both matchingSkills and missingSkills.
+- Every matchingSkills.resumeSkill is a non-empty string.
+- Every matchingSkills.jobSkill is a non-empty string.
+- Every links entry contains a non-empty url.
+
 Before returning the JSON, verify:
 
+- phone exists (null if unavailable).
+- email exists (null if unavailable).
+- links always exists (empty array if none).
+- contactName exists (null if unavailable).
+- candidateName exists (null if unavailable).
+- company exists (null if unavailable).
+- joiningPreference exists (null if unavailable).
 - selectedRole is copied exactly from the input.
-- Every matchingSkill appears somewhere in the resume.
+- Every matchingSkills entry contains BOTH jobSkill and resumeSkill.
+- Every jobSkill exists in the selected role.
+- Every resumeSkill exists somewhere in the resume.
+- No matchingSkills entry contains null or empty strings.
 - No missingSkill appears anywhere in the resume or as an equivalent technology.
 - Every relevantProject exists in the resume.
 - Every relevantExperience exists in the resume.
 - Every education object exists in the resume.
-- No duplicate skills exist.
+- No duplicate matchingSkills exist.
 - No duplicate projects exist.
 - No duplicate experience entries exist.
 
@@ -269,6 +370,16 @@ Return EXACTLY this JSON structure.
 
 {
   "candidateName": null,
+  "phone": null,
+  "email": null,
+
+  "links": [
+    {
+      "label": null,
+      "url": ""
+    }
+  ],
+  "contactName": null,
   "company": null,
   "selectedRole": {
     "title": "",
@@ -281,8 +392,12 @@ Return EXACTLY this JSON structure.
   "joiningPreference": null,
   "matchingSkills": [
     {
-      "jobSkill": "",
-      "resumeSkill": ""
+      "jobSkill": "ReactJS",
+      "resumeSkill": "React.js"
+    },
+    {
+      "jobSkill": "SQL",
+      "resumeSkill": "PostgreSQL"
     }
   ],
   "missingSkills": [],

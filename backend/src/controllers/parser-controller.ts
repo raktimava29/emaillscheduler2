@@ -44,10 +44,14 @@ export async function parseController(
             files?.resumeFile?.[0]
         );
 
+        console.log("========== Extracted Links ==========");
+        // console.log(JSON.stringify(resumeDocument.links, null, 2));
+        // console.log("=====================================");
+
         const resumeSections = extractSections(
             resumeDocument.text
         );
-
+        
         const resume = await parseResume(
             resumeDocument.text,
             resumeSections,

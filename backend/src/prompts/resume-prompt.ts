@@ -39,7 +39,19 @@ STRICT RULES
 - Return the phone number exactly as written in the resume.
 - Do not normalize, reformat, or infer country codes.
 - If no phone number is present, return null.
-- confidenceScore must be between 0.0 and 1.0.
+
+LINKS
+
+The backend has already extracted visible links from the resume.
+
+- Use the provided Detected Links as the primary source.
+- Copy links exactly as provided.
+- Do NOT invent, reconstruct, or guess URLs.
+- Do NOT create additional link objects.
+- If a URL is unavailable, omit that link entirely.
+- Never return a link whose url is null or an empty string.
+
+confidenceScore must be between 0.0 and 1.0.
 
 IDENTITY EXTRACTION
 
@@ -53,11 +65,11 @@ Extract the candidate's:
 The phone number must be copied exactly as it appears in the resume.
 Do not infer or modify it.
 
-The backend has already extracted helpful information.
+The backend has already extracted visible links from the resume.
 
-Detected Links:
+Detected Links (authoritative source):
 
-${JSON.stringify(links)}
+${JSON.stringify(links, null, 2)}
 
 Detected Sections:
 

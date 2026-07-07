@@ -6,8 +6,9 @@ import { deleteResume, uploadResume } from "../services/storage-service";
 
 export async function scheduleEmails(req: Request, res: Response) {
   
-  console.log(req.body);
-  console.log(req.file);
+  // console.log(req.body);
+  // console.log(req.file);
+  
   try {
     const {
       subject,

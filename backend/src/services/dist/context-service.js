@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -52,9 +41,9 @@ var client_1 = require("../client");
 var context_prompt_1 = require("../prompts/context-prompt");
 var candidate_selection_schema_1 = require("../schemas/candidate-selection-schema");
 function buildCandidateContext(resume, job) {
-    var _a, _b, _c;
+    var _a, _b;
     return __awaiter(this, void 0, Promise, function () {
-        var completion, email, content, parsed;
+        var completion, content, parsed, validSkills, _i, _c, skill;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0: return [4 /*yield*/, client_1.groq.chat.completions.create({
@@ -72,10 +61,44 @@ function buildCandidateContext(resume, job) {
                     })];
                 case 1:
                     completion = _d.sent();
-                    email = (_b = (_a = resume.links.find(function (link) { return link.url.startsWith("mailto:"); })) === null || _a === void 0 ? void 0 : _a.url.replace("mailto:", "")) !== null && _b !== void 0 ? _b : null;
-                    content = (_c = completion.choices[0].message.content) !== null && _c !== void 0 ? _c : "{}";
-                    parsed = JSON.parse(content);
-                    return [2 /*return*/, candidate_selection_schema_1.CandidateContextSchema.parse(__assign(__assign({}, parsed), { phone: resume.phone, email: email, links: resume.links, contactName: job.contactName }))];
+                    content = (_a = completion.choices[0].message.content) !== null && _a !== void 0 ? _a : "{}";
+                    try {
+                        parsed = JSON.parse(content);
+                    }
+                    catch (_e) {
+                        throw new Error("LLM returned invalid JSON.");
+                    }
+                    console.log("========== Context LLM Output ==========");
+                    // console.log(JSON.stringify(parsed.matchingSkills, null, 2));
+                    // console.log("========================================");
+                    // Normalize invalid matching skills
+                    if (Array.isArray(parsed.matchingSkills)) {
+                        validSkills = [];
+                        (_b = parsed.missingSkills) !== null && _b !== void 0 ? _b : ;
+                        [];
+                        for (_i = 0, _c = parsed.matchingSkills; _i < _c.length; _i++) {
+                            skill = _c[_i];
+                            if (typeof skill.resumeSkill === "string" &&
+                                skill.resumeSkill.trim() !== "") {
+                                validSkills.push(skill);
+                            }
+                            else if (typeof skill.jobSkill === "string" &&
+                                !parsed.missingSkills.includes(skill.jobSkill)) {
+                                parsed.missingSkills.push(skill.jobSkill);
+                            }
+                        }
+                        parsed.matchingSkills = validSkills;
+                    }
+                    try {
+                        return [2 /*return*/, candidate_selection_schema_1.CandidateContextSchema.parse(parsed)];
+                    }
+                    catch (err) {
+                        console.log("========== FULL CONTEXT RESPONSE ==========");
+                        // console.log(JSON.stringify(parsed, null, 2));
+                        // console.log("===========================================");
+                        throw err;
+                    }
+                    return [2 /*return*/];
             }
         });
     });

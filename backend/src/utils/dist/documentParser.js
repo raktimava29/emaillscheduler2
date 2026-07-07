@@ -70,8 +70,20 @@ function extractPdfContent(buffer) {
                     data = _b.sent();
                     text = data.text;
                     links = [];
-                    visibleLinks = (_a = text.match(/(https?:\/\/[^\s]+|www\.[^\s]+|(?:github|linkedin|leetcode|codeforces)\.com\/[^\s]+)/gi)) !== null && _a !== void 0 ? _a : [];
+                    visibleLinks = (_a = text.match(/(https?:\/\/[^\s]+|www\.[^\s]+|(?:github(?:\.com)?|linkedin(?:\.com)?\/?(?:in)?|leetcode(?:\.com)?|codeforces(?:\.com)?)\/[^\s]+)/gi)) !== null && _a !== void 0 ? _a : [];
                     _loop_1 = function (url) {
+                        if (url.startsWith("github/")) {
+                            url = url.replace("github/", "https://github.com/");
+                        }
+                        if (url.startsWith("linkedin/")) {
+                            url = url.replace("linkedin/", "https://linkedin.com/in/");
+                        }
+                        if (url.startsWith("leetcode/")) {
+                            url = url.replace("leetcode/", "https://leetcode.com/");
+                        }
+                        if (url.startsWith("codeforces/")) {
+                            url = url.replace("codeforces/", "https://codeforces.com/profile/");
+                        }
                         if (!links.some(function (link) { return link.url === url; })) {
                             links.push({
                                 url: url,
