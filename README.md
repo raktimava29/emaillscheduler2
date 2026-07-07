@@ -1,122 +1,141 @@
-# 📬 Chronomail — Email Scheduling System
+# Chronomail
 
-**Chronomail** is a full-stack email scheduling platform that allows users to compose, schedule, and manage email deliveries efficiently. It uses Redis-backed job queues for asynchronous processing and ensures reliable, fault-tolerant email delivery.
+An AI-assisted job outreach tool. Upload a resume and a job description, and Chronomail parses both, builds a candidate/job context, generates a tailored outreach email, and schedules delivery through the user's own Gmail account — with per-sender rate limiting and retry-safe background processing.
 
-> Project Deployed at: https://emaillscheduler2.vercel.app/
+## What it does
 
----
+1. **Parse** — extracts structured data from an uploaded resume (PDF) and a job description (file or pasted text).
+2. **Build context** — combines the parsed resume and job into a candidate-to-role context object.
+3. **Generate** — an LLM (Groq or Gemini) writes a tailored outreach email from that context.
+4. **Schedule & send** — emails are queued and sent via the Gmail API (OAuth), staggered across recipients with an hourly per-sender rate limit, automatic retry on failure, and Gmail token invalidation handling.
+5. **Track** — scheduled, sent, and failed emails are queryable per user.
 
-## 🛠️ Tech Stack
+## Architecture
 
-### Frontend (`frontend/`)
-
-* React (Vite + TypeScript)
-* Tailwind CSS
-* Context API (Auth management)
-* Axios for API communication
-
-### Backend (`backend/`)
-
-* Node.js & Express (TypeScript)
-* PostgreSQL (Supabase)
-* Redis + BullMQ (job queue system)
-* JWT Authentication + Google OAuth
-* Nodemailer (SMTP / Ethereal)
-
----
-
-## 🔐 Features
-
-* 📅 Schedule emails for future delivery
-* ⚡ Instant email sending support
-* 🔁 Automatic retries for failed jobs (BullMQ)
-* 🔐 Secure authentication (JWT + Google OAuth)
-* 📊 Dashboard to manage scheduled and sent emails
-* 📦 RESTful API architecture
-* 🧪 Centralized validation and error handling
-* 📦 Backend deployed on Render
-
----
-
-## 🚀 Getting Started
-
-### Clone the repo
-
-```bash
-git clone https://github.com/your-username/chronomail.git
-cd chronomail
+```
+frontend/   React + TypeScript + Vite, Tailwind CSS
+backend/    Node.js + Express + TypeScript
+            PostgreSQL   — users, email_batches, email_jobs
+            Redis        — BullMQ queue + per-sender hourly rate counters
+            Supabase     — resume file storage
+            Groq / Gemini — email generation, resume & job parsing
+            Gmail API + OAuth2 (Passport) — sending mail as the user
 ```
 
-### Setup Backend
+Backend is layered as `router → controller → service`, with Zod schemas for request validation.
+
+### Background worker
+
+Scheduled emails are processed by a BullMQ worker (`npm run worker`) that:
+- enforces a per-sender, per-hour send limit via Redis counters, auto-rescheduling overflow to the next hour
+- locks each job (`status = 'scheduled' → 'processing'`) to prevent double-sends under concurrency
+- retries transient failures with exponential backoff, and clears a user's Gmail refresh token if it's revoked/invalid
+- attaches the candidate's resume (pulled from Supabase storage) to the outgoing email when provided
+
+## API overview
+
+| Route | Description |
+|---|---|
+| `POST /auth/register`, `/auth/login`, `/auth/logout` | Email/password auth |
+| `GET /auth/google`, `/auth/google/callback` | Google OAuth login |
+| `GET /auth/me` | Current session user |
+| `GET /gmail/connect`, `/gmail/callback` | Connect a Gmail account for sending |
+| `POST /ai/resume-parser` | Parse an uploaded resume |
+| `POST /ai/job-parser` | Parse a job description (file or text) |
+| `POST /ai/parse` | Parse resume + job in one call |
+| `POST /ai/context` | Build candidate/job context from parsed data |
+| `POST /emails/generate` | Generate an outreach email from context |
+| `POST /emails/schedule` | Schedule a batch send to one or more recipients |
+| `GET /emails/scheduled`, `/emails/sent`, `/emails/:id` | Query email status |
+
+All routes except auth/OAuth entry points require a valid session cookie.
+
+## Tech stack
+
+**Frontend:** React, TypeScript, Vite, Tailwind CSS, React Router, `@react-oauth/google`
+
+**Backend:** Node.js, Express, TypeScript, PostgreSQL (`pg`), Redis (`ioredis`), BullMQ, Passport (Google OAuth2), JWT, bcrypt, Zod, Multer, Groq SDK, Google Gemini SDK, Google APIs (Gmail), Supabase (storage)
+
+## Getting started
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL
+- Redis
+
+### Backend
 
 ```bash
 cd backend
 npm install
-npm run dev
+cp .env.example .env   # fill in the values below
+npm run build
+npm start               # API server
+npm run worker          # in a separate process — the email queue worker
 ```
 
-### Setup Frontend
+Or for local development:
+```bash
+npm run dev             # ts-node-dev with auto-restart
+```
+
+**Environment variables (`backend/.env`):**
+
+```
+# Server
+PORT=4000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
+# Database & queue
+DATABASE_URL=postgres://user:password@localhost:5432/chronomail
+REDIS_URL=redis://localhost:6379
+
+# Auth
+JWT_SECRET=
+JWT_EXPIRES_IN=7d
+JWT_COOKIE_MAX_AGE=604800000
+
+# Google OAuth (login)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:4000/auth/google/callback
+
+# Google OAuth (Gmail send scope)
+GOOGLE_GMAIL_CALLBACK_URL=http://localhost:4000/gmail/callback
+
+# LLM providers
+GROQ_API_KEY=
+GROQ_MODEL=
+GEMINI_API_KEY=
+
+# Supabase (resume storage)
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_RESUME_BUCKET=
+```
+
+### Frontend
 
 ```bash
 cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
----
+**Environment variables (`frontend/.env`):**
 
-## ⚙️ Environment Variables
-
-Create a `.env` file inside the `backend/` folder:
-
-```env
-PORT=4000
-
-# PostgreSQL (Supabase / Render)
-DATABASE_URL=your_postgres_connection_string
-
-# Redis (BullMQ)
-REDIS_URL=your_redis_connection_string
-
-# Email Service (SMTP / Ethereal)
-ETHEREAL_USER=your_ethereal_email
-ETHEREAL_PASS=your_ethereal_password
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:4000/auth/google/callback
-
-# JWT
-JWT_SECRET=your_jwt_secret
+```
+VITE_API_URL=http://localhost:4000
+VITE_GOOGLE_CLIENT_ID=
 ```
 
----
+### Production notes
+- Update `FRONTEND_URL`, `GOOGLE_CALLBACK_URL`, and `GOOGLE_GMAIL_CALLBACK_URL` to your deployed domains (Google OAuth callback URLs must be registered in the Google Cloud Console to match exactly).
+- `NODE_ENV=production` enables secure, cross-site cookies (`secure: true`, `sameSite: none`) — required if frontend and backend are on different domains.
+- The API and worker are separate processes (`npm start` / `npm run worker`) and should be deployed/run independently.
 
-## 🔄 API Highlights
-
-* `POST /email/schedule` → Schedule an email
-* `POST /email/send` → Send instantly
-* `GET /email` → Fetch email history
-* `POST /auth/login` → User authentication
-
----
-
-## 🧠 System Architecture
-
-Chronomail follows a **producer-consumer architecture**:
-
-* API server pushes email jobs into a Redis queue (producer)
-* Worker processes jobs and sends emails at scheduled time
-* Failed jobs are retried automatically for reliability
-
----
-
-## 📸 Screenshots
-
-###  Sent Mails
-![](./frontend/src/assets/Screenshot%202026-04-12%20133938.png)
-
-### Schedule Mails
-![](./frontend/src/assets/Screenshot%202026-04-12%20134049.png)
-
+## Known limitations
+- Resume/job parsing accuracy depends on the underlying LLM and is not guaranteed for unusual document formats.
+- No automated test suite yet.

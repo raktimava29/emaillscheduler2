@@ -11,7 +11,7 @@ async function generateEmail(context) {
             model: "gemini-2.5-flash",
             contents: (0, email_prompt_1.buildEmailPrompt)(context),
         });
-        console.log(typeof response.text);
+        //console.log(typeof response.text);
         const content = response.text?.trim();
         if (!content) {
             throw new errors_1.AIError("EMPTY_AI_RESPONSE", "The AI returned an empty response", 500);

@@ -23,15 +23,15 @@ async function parseResume(rawText, sections, links) {
     parsed.links = (parsed.links ?? []).filter((link) => typeof link.url === "string" &&
         link.url.trim() !== "");
     console.log("========== Resume LLM Output ==========");
-    console.log(JSON.stringify(parsed.links, null, 2));
-    console.log("=======================================");
+    // console.log(JSON.stringify(parsed.links, null, 2));
+    // console.log("=======================================");
     try {
         return resume_schema_1.ResumeParserResponseSchema.parse(parsed);
     }
     catch (err) {
         console.log("========== FULL AI RESPONSE ==========");
-        console.log(JSON.stringify(parsed, null, 2));
-        console.log("======================================");
+        // console.log(JSON.stringify(parsed, null, 2));
+        // console.log("======================================");
         throw err;
     }
 }

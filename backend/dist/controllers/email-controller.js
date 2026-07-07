@@ -9,8 +9,8 @@ const db_1 = require("../config/db");
 const queue_1 = require("../config/queue");
 const storage_service_1 = require("../services/storage-service");
 async function scheduleEmails(req, res) {
-    console.log(req.body);
-    console.log(req.file);
+    // console.log(req.body);
+    // console.log(req.file);
     try {
         const { subject, body, startTime, delayBetweenEmailsSeconds, hourlyLimit = 100, } = req.body;
         const recipients = Array.isArray(req.body.recipients)

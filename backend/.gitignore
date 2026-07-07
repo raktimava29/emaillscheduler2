@@ -1,1 +1,26 @@
-*.env
+# Dependencies
+node_modules/
+src/node_modules/
+
+# Build output
+dist/
+src/config/dist/
+build/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# TypeScript build info
+*.tsbuildinfo

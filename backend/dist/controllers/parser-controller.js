@@ -21,8 +21,8 @@ async function parseController(req, res) {
         }
         const resumeDocument = await (0, documentParser_1.parseDocument)(req.body.resumeFile, files?.resumeFile?.[0]);
         console.log("========== Extracted Links ==========");
-        console.log(JSON.stringify(resumeDocument.links, null, 2));
-        console.log("=====================================");
+        // console.log(JSON.stringify(resumeDocument.links, null, 2));
+        // console.log("=====================================");
         const resumeSections = (0, extractSections_1.extractSections)(resumeDocument.text);
         const resume = await (0, resume_service_1.parseResume)(resumeDocument.text, resumeSections, resumeDocument.links);
         const jobDocument = await (0, documentParser_1.parseDocument)(req.body.jobFile, files?.jobFile?.[0]);

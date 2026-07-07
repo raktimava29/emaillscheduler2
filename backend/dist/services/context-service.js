@@ -27,8 +27,8 @@ async function buildCandidateContext(resume, job) {
         throw new Error("LLM returned invalid JSON.");
     }
     console.log("========== Context LLM Output ==========");
-    console.log(JSON.stringify(parsed.matchingSkills, null, 2));
-    console.log("========================================");
+    // console.log(JSON.stringify(parsed.matchingSkills, null, 2));
+    // console.log("========================================");
     // Normalize invalid matching skills
     if (Array.isArray(parsed.matchingSkills)) {
         const validSkills = [];
@@ -50,8 +50,8 @@ async function buildCandidateContext(resume, job) {
     }
     catch (err) {
         console.log("========== FULL CONTEXT RESPONSE ==========");
-        console.log(JSON.stringify(parsed, null, 2));
-        console.log("===========================================");
+        // console.log(JSON.stringify(parsed, null, 2));
+        // console.log("===========================================");
         throw err;
     }
 }
