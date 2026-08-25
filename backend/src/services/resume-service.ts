@@ -10,7 +10,7 @@ export async function parseResume(
 ): Promise<ResumeParserResponse> {
     
     const completion = await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
+        model: "qwen/qwen3.6-27b",
         temperature: 0,
         response_format: {
             type:"json_object"
