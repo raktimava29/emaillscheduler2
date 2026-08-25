@@ -14,7 +14,7 @@ export const CandidateContextSchema = z.object({
 
     links: z.array(
         z.object({
-            label: z.string().nullable().optional(),
+            label: z.string().nullable(),
             url: z.string(),
         })
     ),
