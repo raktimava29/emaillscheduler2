@@ -11,23 +11,23 @@ export const ProjectSchema = z.object({
 export const EducationSchema = z.object({
   degree: z.string(),
   institution: z.string(),
-  startDate: z.string().nullable().optional(),
-  endDate: z.string().nullable().optional(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
   academicScore: z.object({
-    gpa: z.coerce.number().nullable().optional(),
-    cgpa: z.coerce.number().nullable().optional(),
-    sgpa: z.coerce.number().nullable().optional(),
-    percentage: z.coerce.number().nullable().optional(),
-  }).nullable().optional(),
-  location: z.string().nullable().optional(),
+    gpa: z.coerce.number().nullable(),
+    cgpa: z.coerce.number().nullable(),
+    sgpa: z.coerce.number().nullable(),
+    percentage: z.coerce.number().nullable(),
+  }).nullable(),
+  location: z.string().nullable(),
 });
 
 export const ExperienceSchema = z.object({
-  position: z.string().nullable().optional(),
-  company: z.string().nullable().optional(),
-  startDate: z.string().nullable().optional(),
-  endDate: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
+  position: z.string().nullable(),
+  company: z.string().nullable(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  location: z.string().nullable(),
   description: z.array(z.string()),
 });
 
