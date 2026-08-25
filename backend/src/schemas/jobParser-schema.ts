@@ -10,7 +10,7 @@ export const RoleSchema = z.object({
 });
 
 export const JobParserResponseSchema = z.object({
-  recipientEmail: z.string().email().nullable(),
+  recipientEmail: z.string().nullable(),
   company: z.string().nullable(),
   roles: z.array(RoleSchema).min(1),
   selectedRole: RoleSchema.nullable(),
