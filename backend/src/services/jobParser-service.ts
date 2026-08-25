@@ -1,3 +1,4 @@
+import z from "zod";
 import { groq } from "../client";
 import { buildJobParserPrompt } from "../prompts/jobParser-prompt";
 import { JobParserResponse, JobParserResponseSchema } from "../schemas/jobParser-schema";
@@ -9,16 +10,22 @@ export async function parseJob(
 ): Promise<JobParserResponse> {
 
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.6-27b",
+        model: "openai/gpt-oss-120b",
         temperature: 0,
         reasoning_format: "hidden",
         response_format: {
-            type: "json_object",
+            type: "json_schema",
+            json_schema: {
+                name: "job_parser_response",
+                schema: z.toJSONSchema(JobParserResponseSchema),
+            },
         },
         messages: [
-            {
-                role: "user",
-                content: buildJobParserPrompt(document),
+            { 
+                role: "user", 
+                content: buildJobParserPrompt(
+                    document
+                ) 
             },
         ],
     });

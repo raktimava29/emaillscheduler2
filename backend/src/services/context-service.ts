@@ -3,6 +3,7 @@ import { buildContextPrompt } from "../prompts/context-prompt";
 import { CandidateContext, CandidateContextSchema } from "../schemas/candidate-selection-schema";
 import { ResumeParserResponse } from "../schemas/resume-schema";
 import { JobParserResponse } from "../schemas/jobParser-schema";
+import z from "zod";
 
 export async function buildCandidateContext(
     resume: ResumeParserResponse,
@@ -10,22 +11,26 @@ export async function buildCandidateContext(
 ): Promise<CandidateContext> {
 
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.6-27b",
-        temperature: 0,
-        reasoning_format: "hidden", 
-        response_format: {
-            type: "json_object",
-        },
-        messages: [
-            {
-                role: "user",
-                content: buildContextPrompt(
-                    resume,
-                    job
-                ),
+            model: "openai/gpt-oss-120b",
+            temperature: 0,
+            reasoning_format: "hidden",
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "job_parser_response",
+                    schema: z.toJSONSchema(CandidateContextSchema),
+                },
             },
-        ],
-    });
+            messages: [
+                {
+                    role: "user",
+                    content: buildContextPrompt(
+                        resume,
+                        job
+                    ),
+                },
+            ],
+        });
 
     const content = completion.choices[0].message.content ?? "{}";
 

@@ -2,6 +2,7 @@ import { groq } from "../client";
 import { buildResumeParserPrompt } from "../prompts/resume-prompt";
 import { ResumeParserResponse, ResumeParserResponseSchema } from "../schemas/resume-schema";
 import { ResumeLink, ResumeSections } from "../config/types";
+import z from "zod";
 
 export async function parseResume(
     rawText: string,
@@ -10,24 +11,27 @@ export async function parseResume(
 ): Promise<ResumeParserResponse> {
     
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.6-27b",
-        temperature: 0,
-        reasoning_format: "hidden", 
-        response_format: {
-            type:"json_object"
-        },
-        
-        messages:[
-            {
-                role:"user",
-                content:buildResumeParserPrompt(
-                    rawText,
-                    sections,
-                    links
-                )
-            }
-        ]
-    });
+            model: "openai/gpt-oss-120b",
+            temperature: 0,
+            reasoning_format: "hidden",
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "job_parser_response",
+                    schema: z.toJSONSchema(ResumeParserResponseSchema),
+                },
+            },
+            messages:[
+                {
+                    role:"user",
+                    content:buildResumeParserPrompt(
+                        rawText,
+                        sections,
+                        links
+                    )
+                }
+            ]
+        });
 
     const content = completion.choices[0].message.content ?? "{}";
 
