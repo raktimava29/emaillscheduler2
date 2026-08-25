@@ -12,6 +12,7 @@ export async function parseResume(
     const completion = await groq.chat.completions.create({
         model: "qwen/qwen3.6-27b",
         temperature: 0,
+        reasoning_format: "hidden", 
         response_format: {
             type:"json_object"
         },
