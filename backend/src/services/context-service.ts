@@ -17,7 +17,8 @@ export async function buildCandidateContext(
             response_format: {
                 type: "json_schema",
                 json_schema: {
-                    name: "job_parser_response",
+                    name: "candidate_context",
+                    strict: true,
                     schema: z.toJSONSchema(CandidateContextSchema),
                 },
             },

@@ -3,8 +3,8 @@ import { z } from "zod";
 export const ProjectSchema = z.object({
   name: z.string(),
   technologies: z.array(z.string()),
-  startDate: z.string().nullable().optional(),
-  endDate: z.string().nullable().optional(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
   description: z.array(z.string()),
 });
 
@@ -44,7 +44,7 @@ export const ResumeParserResponseSchema = z.object({
   achievements: z.array(z.string()),
   links: z.array(
     z.object({
-      label: z.string().nullable().optional(),
+      label: z.string().nullable(),
       url: z.string(),
     })
   ),

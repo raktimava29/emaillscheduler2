@@ -17,6 +17,7 @@ export async function parseJob(
             type: "json_schema",
             json_schema: {
                 name: "job_parser_response",
+                strict: true,
                 schema: z.toJSONSchema(JobParserResponseSchema),
             },
         },

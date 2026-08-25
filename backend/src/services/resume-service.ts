@@ -11,27 +11,28 @@ export async function parseResume(
 ): Promise<ResumeParserResponse> {
     
     const completion = await groq.chat.completions.create({
-            model: "openai/gpt-oss-120b",
-            temperature: 0,
-            reasoning_format: "hidden",
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: "job_parser_response",
-                    schema: z.toJSONSchema(ResumeParserResponseSchema),
-                },
+        model: "openai/gpt-oss-120b",
+        temperature: 0,
+        reasoning_format: "hidden",
+        response_format: {
+            type: "json_schema",
+            json_schema: {
+                name: "resume_parser_response",
+                strict: true,
+                schema: z.toJSONSchema(ResumeParserResponseSchema),
             },
-            messages:[
-                {
-                    role:"user",
-                    content:buildResumeParserPrompt(
-                        rawText,
-                        sections,
-                        links
-                    )
-                }
-            ]
-        });
+        },
+        messages:[
+            {
+                role:"user",
+                content:buildResumeParserPrompt(
+                    rawText,
+                    sections,
+                    links
+                )
+            }
+        ]
+    });
 
     const content = completion.choices[0].message.content ?? "{}";
 
