@@ -13,6 +13,8 @@ export async function parseJob(
         model: "openai/gpt-oss-120b",
         temperature: 0,
         reasoning_format: "hidden",
+        reasoning_effort: "low",          
+        max_completion_tokens: 4096, 
         response_format: {
             type: "json_schema",
             json_schema: {
