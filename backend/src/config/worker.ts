@@ -44,7 +44,13 @@ export function startWorker() {
 
       const emailJob = jobRows[0];
 
-      if (emailJob.status !== "scheduled") return;
+      const STALE_MS = 2 * 60 * 1000; // treat "processing" older than this as orphaned
+      const isStaleProcessing =
+        emailJob.status === "processing" &&
+        emailJob.processing_started_at &&
+        Date.now() - new Date(emailJob.processing_started_at).getTime() > STALE_MS;
+
+      if (emailJob.status !== "scheduled" && !isStaleProcessing) return;
 
       const { rows: batchRows } = await db.query(
         `
@@ -113,9 +119,13 @@ export function startWorker() {
       const lock = await db.query(
         `
         UPDATE email_jobs
-        SET status = 'processing'
+        SET status = 'processing',
+            processing_started_at = NOW()
         WHERE id = $1
-          AND status = 'scheduled'
+          AND (
+            status = 'scheduled'
+            OR (status = 'processing' AND processing_started_at < NOW() - INTERVAL '2 minutes')
+          )
         `,
         [emailJob.id]
       );
@@ -214,6 +224,7 @@ export function startWorker() {
     {
       connection: redis,
       concurrency: 5,
+      lockDuration: 60000, // default 30s is tight for resume download + Gmail send; avoid false "stalled" detection
     }
   );
 
