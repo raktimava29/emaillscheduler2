@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, redirect } from "../lib/api";
 import { useAuth } from "../auth/useAuth";
@@ -10,6 +10,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!auth.loading && auth.user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [auth.loading, auth.user, navigate]);
 
   const loginWithGoogle = () => {
       redirect("/auth/google");
