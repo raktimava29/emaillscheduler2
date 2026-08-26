@@ -10,11 +10,11 @@ export async function parseJob(
 ): Promise<JobParserResponse> {
 
     const completion = await groq.chat.completions.create({
-        model: "openai/gpt-oss-120b",
+        model: "qwen/qwen3.6-27b",
         temperature: 0,
         reasoning_format: "hidden",
-        reasoning_effort: "low",          
-        max_completion_tokens: 4096, 
+        reasoning_effort: "none",       
+        max_completion_tokens: 2048, 
         response_format: {
             type: "json_schema",
             json_schema: {
