@@ -15,7 +15,7 @@ export async function parseResume(
         temperature: 0,
         reasoning_format: "hidden",
         reasoning_effort: "none",          
-        max_completion_tokens: 3096, 
+        max_completion_tokens: 850, 
         response_format: {
             type: "json_schema",
             json_schema: {
