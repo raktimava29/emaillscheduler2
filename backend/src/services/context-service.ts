@@ -15,7 +15,7 @@ export async function buildCandidateContext(
         temperature: 0,
         reasoning_format: "hidden",
         reasoning_effort: "low",
-        max_completion_tokens: 850, 
+        max_completion_tokens: 950, 
         response_format: {
             type: "json_schema",
             json_schema: {
