@@ -11,11 +11,11 @@ export async function parseResume(
 ): Promise<ResumeParserResponse> {
     
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.8-27b",
+        model: "qwen/qwen3.6-27b",
         temperature: 0,
         reasoning_format: "hidden",
         reasoning_effort: "none",          
-        max_completion_tokens: 2048, 
+        max_completion_tokens: 3096, 
         response_format: {
             type: "json_schema",
             json_schema: {
