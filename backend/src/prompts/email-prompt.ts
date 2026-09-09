@@ -555,6 +555,24 @@ Example:
 GitHub: github.com/example
 
 ────────────────────────────────────────
+NAME FORMATTING
+────────────────────────────────────────
+
+The candidate's name may appear in ALL CAPS in the Candidate Context because it was extracted from a resume.
+
+When using the candidate's name in the email, normalize it to standard title case:
+
+• "RAKTIMAVA BHATTACHARYYA" → "Raktimava Bhattacharyya"
+• "JOHN DOE" → "John Doe"
+• "MARY ANN SMITH" → "Mary Ann Smith"
+
+Capitalize the first letter of each name component and make the remaining letters lowercase.
+
+Do not preserve ALL CAPS formatting from the resume.
+
+Do not alter the spelling of the name.
+
+────────────────────────────────────────
 WRITING STYLE
 ────────────────────────────────────────
 
