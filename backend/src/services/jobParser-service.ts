@@ -10,7 +10,7 @@ export async function parseJob(
 ): Promise<JobParserResponse> {
 
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         temperature: 0,
         reasoning_format: "hidden",
         reasoning_effort: "none",       

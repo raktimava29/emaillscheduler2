@@ -11,11 +11,11 @@ export async function buildCandidateContext(
 ): Promise<CandidateContext> {
 
     const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.8-27b",
+        model: "openai/gpt-oss-120b",
         temperature: 0,
         reasoning_format: "hidden",
-        reasoning_effort: "none",
-        max_completion_tokens: 3000, 
+        reasoning_effort: "low",
+        max_completion_tokens: 4096, 
         response_format: {
             type: "json_schema",
             json_schema: {
