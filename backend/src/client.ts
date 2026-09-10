@@ -9,3 +9,7 @@ export const groq = new Groq({
 export const gemini = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY!,
 });
+
+export const resumeGroq = new Groq({
+    apiKey: process.env.GROQ_RESUME_API_KEY!
+});

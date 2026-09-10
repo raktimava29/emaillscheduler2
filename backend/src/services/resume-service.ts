@@ -1,4 +1,4 @@
-import { groq } from "../client";
+import { resumeGroq } from "../client";
 import { buildResumeParserPrompt } from "../prompts/resume-prompt";
 import { ResumeParserResponse, ResumeParserResponseSchema } from "../schemas/resume-schema";
 import { ResumeLink, ResumeSections } from "../config/types";
@@ -10,11 +10,11 @@ export async function parseResume(
     links: ResumeLink[]
 ): Promise<ResumeParserResponse> {
     
-    const completion = await groq.chat.completions.create({
-        model: "qwen/qwen3.6-27b",
+    const completion = await resumeGroq.chat.completions.create({
+        model: "openai/gpt-oss-120b",
         temperature: 0,
         reasoning_format: "hidden",
-        reasoning_effort: "none",          
+        reasoning_effort: "low",
         max_completion_tokens: 950, 
         response_format: {
             type: "json_schema",
