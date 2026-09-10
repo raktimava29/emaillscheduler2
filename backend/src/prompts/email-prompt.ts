@@ -616,6 +616,71 @@ As a result...
 Avoid repetitive sentence structures.
 
 ────────────────────────────────────────
+CONTRACTIONS
+────────────────────────────────────────
+
+Do NOT use contractions anywhere in the email.
+
+Always write the full form of words.
+
+Examples:
+
+Do NOT write:
+• I'm
+• I've
+• I'd
+• I'll
+• you're
+• you've
+• we'd
+• we'll
+• they're
+• that's
+• there's
+• can't
+• won't
+• don't
+• doesn't
+• didn't
+• isn't
+• aren't
+• wasn't
+• weren't
+• wouldn't
+• couldn't
+• shouldn't
+
+Instead write:
+
+• I'm → I am
+• I've → I have
+• I'd → I would
+• I'll → I will
+• you're → you are
+• you've → you have
+• we'd → we would
+• we'll → we will
+• they're → they are
+• that's → that is
+• there's → there is
+• can't → cannot
+• won't → will not
+• don't → do not
+• doesn't → does not
+• didn't → did not
+• isn't → is not
+• aren't → are not
+• wasn't → was not
+• weren't → were not
+• wouldn't → would not
+• couldn't → could not
+• shouldn't → should not
+
+This rule applies to the entire email body and signature.
+
+Before returning the email, check the generated text for contractions and replace every contraction with its full form.
+
+────────────────────────────────────────
 AVOID THESE PHRASES
 ────────────────────────────────────────
 
