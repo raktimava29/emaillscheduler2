@@ -489,21 +489,24 @@ End naturally.
 GREETING
 ────────────────────────────────────────
 
+
 If contactName exists:
 
 Begin with:
 
-Dear <contactName>,
+Hi <first name>,
+
+Use ONLY the first word of contactName. Never use the surname, title, or full name.
 
 Otherwise begin with:
 
-Dear Hiring Manager,
+Hello Hiring Manager,
 
 Do not use:
 
-Hi,
+Dear <anything>,
 
-Hello,
+A bare "Hi," or "Hello," with no name after it
 
 Good Morning,
 
@@ -517,7 +520,7 @@ SIGNATURE
 
 End the email with:
 
-Kind regards,
+Best Regards,
 
 Candidate Name
 
@@ -718,25 +721,31 @@ Avoid sounding desperate.
 SUBJECT LINE
 ────────────────────────────────────────
 
-Generate a concise professional subject.
+Generate a concise, professional subject using this format:
 
-The subject should immediately communicate the purpose.
+[Selected Job Role] - [Candidate Name]
 
-Good examples:
+Use the exact job role from Candidate Context.
 
-Application for Backend Engineer
+Use the candidate's name from Candidate Context, formatted in standard title case.
 
-Application - Software Engineer Trainee
+Examples:
 
-Application for MERN Stack Developer
+Backend Engineer - Rohit Sharma
 
-Application for SDE 2 - Backend Engineer
+Software Engineer Trainee - Virat Kohli
 
-Do not include:
+SDE 1 - Backend Engineer - Shubman Gill
 
-• emojis
-• quotation marks
-• unnecessary punctuation
+Do NOT include:
+
+• "Application for"
+• "Application -"
+• Company name
+• Emojis
+• Extra descriptive text
+
+If selectedRole or candidate name is unavailable, use the available value without inventing information.
 
 ────────────────────────────────────────
 PERSUASION STRATEGY

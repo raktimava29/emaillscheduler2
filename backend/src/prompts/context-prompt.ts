@@ -76,9 +76,13 @@ If a value is unavailable, return null.
 
 If no links exist, return an empty array.
 
-The contactName must come only from the job description.
+Copy the following value directly from the parsed job.
 
-If no recruiter or hiring contact is provided, return null.
+Job field "contactName" -> Output field "contactName"
+
+Do not modify, shorten, or infer it.
+
+If job contactName is null, return null.
 
 --------------------------------------------------
 MATCHING RULES

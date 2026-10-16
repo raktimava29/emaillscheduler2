@@ -4,6 +4,7 @@ import { buildJobParserPrompt } from "../prompts/jobParser-prompt";
 import { JobParserResponse, JobParserResponseSchema } from "../schemas/jobParser-schema";
 import type { Role } from "../schemas/jobParser-schema";
 import { normalizeEmploymentType, normalizeWorkMode } from "../utils/normalize";
+import { contactNameFromEmail } from "../utils/contactFromEmail";
 
 export async function parseJob(
     document: string
@@ -55,6 +56,10 @@ export async function parseJob(
                     index === self.findIndex((r) => r.title.toLowerCase() === role.title.toLowerCase())
             );
         }
+
+    if (!parsed.contactName) {
+        parsed.contactName = contactNameFromEmail(parsed.recipientEmail);
+    }
     
     return JobParserResponseSchema.parse(parsed);
 }

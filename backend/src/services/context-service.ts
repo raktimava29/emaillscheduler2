@@ -45,39 +45,41 @@ export async function buildCandidateContext(
         throw new Error("LLM returned invalid JSON.");
     }
 
+    parsed.contactName = job.contactName ?? null;
+    
     console.log("========== Context LLM Output ==========");
     // console.log(JSON.stringify(parsed.matchingSkills, null, 2));
     // console.log("========================================");
 
-// Normalize invalid matching skills
-if (Array.isArray(parsed.matchingSkills)) {
-    const validSkills = [];
-    parsed.missingSkills ??= [];
+    // Normalize invalid matching skills
+    if (Array.isArray(parsed.matchingSkills)) {
+        const validSkills = [];
+        parsed.missingSkills ??= [];
 
-    for (const skill of parsed.matchingSkills) {
-        if (
-            typeof skill.resumeSkill === "string" &&
-            skill.resumeSkill.trim() !== ""
-        ) {
-            validSkills.push(skill);
-        } else if (
-            typeof skill.jobSkill === "string" &&
-            !parsed.missingSkills.includes(skill.jobSkill)
-        ) {
-            parsed.missingSkills.push(skill.jobSkill);
+        for (const skill of parsed.matchingSkills) {
+            if (
+                typeof skill.resumeSkill === "string" &&
+                skill.resumeSkill.trim() !== ""
+            ) {
+                validSkills.push(skill);
+            } else if (
+                typeof skill.jobSkill === "string" &&
+                !parsed.missingSkills.includes(skill.jobSkill)
+            ) {
+                parsed.missingSkills.push(skill.jobSkill);
+            }
         }
+
+        parsed.matchingSkills = validSkills;
     }
 
-    parsed.matchingSkills = validSkills;
-}
+    try {
+        return CandidateContextSchema.parse(parsed);
+    } catch (err) {
+        console.log("========== FULL CONTEXT RESPONSE ==========");
+        // console.log(JSON.stringify(parsed, null, 2));
+        // console.log("===========================================");
 
-try {
-    return CandidateContextSchema.parse(parsed);
-} catch (err) {
-    console.log("========== FULL CONTEXT RESPONSE ==========");
-    // console.log(JSON.stringify(parsed, null, 2));
-    // console.log("===========================================");
-
-    throw err;
-}
+        throw err;
+    }
 }
