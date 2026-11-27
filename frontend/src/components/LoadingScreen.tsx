@@ -1,3 +1,5 @@
+import { FiSend } from "react-icons/fi";
+
 interface LoadingScreenProps {
     title: string;
     description: string;
@@ -8,14 +10,16 @@ export default function LoadingScreen({
     description
 }: LoadingScreenProps) {
     return (
-        <div className="flex flex-col items-center py-20 text-center">
-            <div className="mb-8 h-14 w-14 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+        <div role="status" className="flex flex-col items-center py-14 text-center">
+            <span aria-hidden className="mb-8 flex h-20 w-20 animate-hover items-center justify-center rounded-3xl bg-sun text-ink shadow-lg">
+                <FiSend size={34} />
+            </span>
 
-            <h2 className="text-2xl font-semibold">
+            <h2 className="text-2xl font-bold">
                 {title}
             </h2>
 
-            <p className="mt-3 text-gray-500">
+            <p className="mt-3 text-slate2">
                 {description}
             </p>
         </div>

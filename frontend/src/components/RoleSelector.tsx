@@ -21,7 +21,7 @@ export default function RoleSelector({
                 Select Position
             </h2>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-slate2">
                 Multiple roles were detected. Choose the role you want to apply for.
             </p>
 
@@ -30,29 +30,30 @@ export default function RoleSelector({
                     <button
                         key={`${role.title}-${role.employmentType ?? ""}-${role.location ?? ""}`}
                         onClick={() => onSelect(role)}
+                        aria-pressed={selectedRole?.title === role.title}
                         className={`w-full rounded-xl border p-4 text-left transition
                         ${
                             selectedRole?.title === role.title
-                                ? "border-emerald-500 bg-emerald-50"
-                                : "border-gray-300 hover:border-emerald-400"
+                                ? "border-cobalt bg-sky ring-2 ring-cobalt"
+                                : "border-line hover:border-cobalt"
                         }`}
                     >
                         <p className="font-semibold text-lg">
                             {role.title}
                         </p>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-slate2">
                             {[
                                 role.location,
                                 role.workMode,
                                 role.employmentType,
                             ]
                                 .filter(Boolean)
-                                .join(" • ")}
+                                .join(", ")}
                         </p>
 
                         {role.experienceRequired && (
-                            <p className="mt-2 text-sm text-gray-600">
+                            <p className="mt-2 text-sm text-slate2">
                                 Experience: {role.experienceRequired}
                             </p>
                         )}
@@ -63,7 +64,7 @@ export default function RoleSelector({
             <div className="mt-8 flex justify-between">
                 <button
                     onClick={onBack}
-                    className="rounded-xl border px-6 py-3"
+                    className="btn-ghost"
                 >
                     Back
                 </button>
@@ -71,7 +72,7 @@ export default function RoleSelector({
                 <button
                     disabled={!selectedRole}
                     onClick={onContinue}
-                    className="rounded-xl bg-emerald-600 px-6 py-3 text-white disabled:opacity-40"
+                    className="btn-primary"
                 >
                     Continue
                 </button>

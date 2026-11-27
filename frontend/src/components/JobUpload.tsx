@@ -1,3 +1,5 @@
+import FileDrop from "./ui/FileDrop";
+
 interface JobUploadProps {
     jobFile: File | null;
     jobText: string;
@@ -23,39 +25,32 @@ export default function JobUpload({
                 Job Description
             </h2>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-slate2">
                 Upload a PDF or paste the job description below.
             </p>
 
-            <label className="mt-8 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 p-10 transition hover:border-emerald-500">
-                <input
-                    type="file"
-                    accept=".pdf"
-                    hidden
-                    onChange={(e) => {
-                        const file = e.target.files?.[0] ?? null;
-                        onFileChange(file);
+            <FileDrop
+                file={jobFile}
+                prompt="Upload job description"
+                onFile={(file) => {
+                    onFileChange(file);
 
-                        if (file) {
-                            onTextChange("");
-                        }
-                    }}
-                />
+                    if (file) {
+                        onTextChange("");
+                    }
+                }}
+            />
 
-                <span>
-                    {jobFile ? jobFile.name : "Upload PDF"}
-                </span>
-            </label>
-
-            <div className="my-6 text-center text-gray-400">
-                OR
+            <div className="my-4 text-center text-slate2">
+                or paste it
             </div>
 
             <textarea
                 value={jobText}
-                rows={10}
+                rows={6}
                 placeholder="Paste the job description here..."
-                className="w-full rounded-xl border border-gray-300 p-4 outline-none transition focus:border-emerald-500"
+                aria-label="Job description text"
+                className="field"
                 onChange={(e) => {
                     onTextChange(e.target.value);
 
@@ -68,7 +63,7 @@ export default function JobUpload({
             <div className="mt-8 flex justify-between">
                 <button
                     onClick={onBack}
-                    className="rounded-xl border border-gray-300 px-6 py-3 transition hover:bg-gray-50"
+                    className="btn-ghost"
                 >
                     Back
                 </button>
@@ -76,7 +71,7 @@ export default function JobUpload({
                 <button
                     disabled={!jobFile && jobText.trim() === ""}
                     onClick={onContinue}
-                    className="rounded-xl bg-emerald-600 px-6 py-3 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="btn-primary"
                 >
                     Parse
                 </button>
