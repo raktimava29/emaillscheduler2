@@ -1,48 +1,49 @@
-import { FiSearch, FiFilter, FiRefreshCw } from "react-icons/fi";
+import { useState } from "react";
+import { FiSearch, FiRefreshCw } from "react-icons/fi";
 
 interface HeaderProps {
   search: string;
   onSearchChange: (value: string) => void;
   onRefresh: () => void;
-  onFilter: () => void;
 }
 
 export default function Header({
   search,
   onSearchChange,
   onRefresh,
-  onFilter,
 }: HeaderProps) {
+  const [turns, setTurns] = useState(0);
+
   return (
-    <div className="flex items-center gap-3 px-6 py-4 border-b bg-white">
-      <div className="flex flex-1 items-center gap-2 rounded-full bg-gray-100 px-4 py-2">
-        <FiSearch className="text-gray-400" />
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <FiSearch aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2 text-slate2" />
         <input
+          type="search"
+          aria-label="Search emails"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search"
-          className="flex-1 bg-transparent text-sm outline-none"
+          placeholder="Search by recipient or subject"
+          className="field rounded-full pl-11"
         />
       </div>
-      
-      <button
-        onClick={onFilter}
-        className="rounded-full p-2 hover:bg-gray-100"
-        title="Filter"
-      >
-        <FiFilter size={18} />
-      </button>
 
       <button
-        onClick={onRefresh}
-        className="rounded-full p-2 hover:bg-gray-100"
+        onClick={() => {
+          setTurns((t) => t + 1);
+          onRefresh();
+        }}
+        className="icon-btn border border-line bg-white"
+        aria-label="Refresh"
         title="Refresh"
       >
-        <FiRefreshCw size={18} />
+        <FiRefreshCw
+          size={18}
+          aria-hidden
+          className="transition-transform duration-500"
+          style={{ transform: `rotate(${turns * 360}deg)` }}
+        />
       </button>
     </div>
   );
 }
-
-
-

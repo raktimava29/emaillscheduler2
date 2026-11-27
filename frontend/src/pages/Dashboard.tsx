@@ -4,6 +4,8 @@ import Tabs from "../components/Tabs";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../auth/useAuth";
+import { FiCheckCircle, FiClock, FiEdit3, FiLogOut } from "react-icons/fi";
+import Logo from "../components/ui/Logo";
 
 type TabType = "scheduled" | "sent";
 
@@ -25,6 +27,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [scheduledCount, setScheduledCount] = useState(0);
   const [sentCount, setSentCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
@@ -71,7 +74,7 @@ export default function Dashboard() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [refreshKey]);
 
   const handleLogout = async () => {
     await auth.logout();
@@ -82,138 +85,69 @@ export default function Dashboard() {
     return email.slice(0, 2).toUpperCase();
   };
 
+  const mailboxes = [
+    { id: "scheduled" as const, label: "Scheduled", count: scheduledCount, Icon: FiClock },
+    { id: "sent" as const, label: "Sent", count: sentCount, Icon: FiCheckCircle },
+  ];
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/50">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-gray-200/80 flex flex-col shadow-sm">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent" style={{ fontFamily: 'SF Pro Display, system-ui, sans-serif' }}>
-              ChronoMail
-            </h1>
-          </div>
-        </div>
-
-        {/* User Profile */}
-        <div className="p-6">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 border border-gray-200/50">
-            {userProfile?.avatar_url ? (
-              <img
-                src={userProfile.avatar_url}
-                className="h-11 w-11 rounded-full ring-2 ring-white shadow-md"
-                alt="User"
-              />
-            ) : (
-              <div className="h-11 w-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                {user?.email ? getInitials(user.email) : "US"}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
-                {user?.email.split("@")[0]}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Compose Button */}
-        <div className="px-6 pb-6">
-          <button
-            onClick={() => navigate("/compose")}
-            className="group w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 font-semibold shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Compose</span>
+    <div className="flex min-h-screen flex-col md:h-screen md:flex-row">
+      <aside className="flex shrink-0 flex-col gap-4 border-b border-line bg-white p-4 md:w-72 md:gap-6 md:border-b-0 md:border-r md:p-6">
+        <div className="flex items-center justify-between">
+          <Logo />
+          <button onClick={handleLogout} className="icon-btn md:hidden" aria-label="Log out">
+            <FiLogOut aria-hidden />
           </button>
         </div>
 
-        {/* Navigation */}
-        <div className="flex-1 px-6 pb-6">
-          <p className="mb-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Mailboxes
-          </p>
+        <button onClick={() => navigate("/compose")} className="btn-sun group w-full py-3.5 text-base">
+          <FiEdit3 aria-hidden className="transition group-hover:-rotate-12 group-hover:scale-110" /> Compose
+        </button>
 
-          <div className="space-y-1">
+        <nav aria-label="Mailboxes" className="grid grid-cols-2 gap-2 md:grid-cols-1">
+          {mailboxes.map(({ id, label, count, Icon }) => (
             <button
-              onClick={() => setActiveTab("scheduled")}
-              className={`group flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                activeTab === "scheduled"
-                  ? "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 shadow-sm"
-                  : "text-gray-600 hover:bg-gray-50"
+              key={id}
+              onClick={() => setActiveTab(id)}
+              aria-current={activeTab === id ? "page" : undefined}
+              className={`flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-95 ${
+                activeTab === id ? "bg-cobalt text-white" : "text-slate2 hover:bg-sky hover:text-ink"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Scheduled</span>
-              </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                activeTab === "scheduled"
-                  ? "bg-emerald-200 text-emerald-700"
-                  : "bg-gray-200 text-gray-600"
-              }`}>
-                {scheduledCount}
+              <span className="flex items-center gap-3"><Icon size={18} aria-hidden /> {label}</span>
+              <span key={count} className={`animate-rise rounded-full px-2.5 py-0.5 text-xs tabular-nums ${activeTab === id ? "bg-white text-cobalt" : "bg-sky text-ink"}`}>
+                {count}
               </span>
             </button>
+          ))}
+        </nav>
 
-            <button
-              onClick={() => setActiveTab("sent")}
-              className={`group flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                activeTab === "sent"
-                  ? "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 shadow-sm"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Sent</span>
-              </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                activeTab === "sent"
-                  ? "bg-emerald-200 text-emerald-700"
-                  : "bg-gray-200 text-gray-600"
-              }`}>
-                {sentCount}
-              </span>
-            </button>
+        <div className="mt-auto hidden items-center gap-3 border-t border-line pt-5 md:flex">
+          {userProfile?.avatar_url ? (
+            <img src={userProfile.avatar_url} className="h-10 w-10 rounded-full" alt="" />
+          ) : (
+            <span aria-hidden className="flex h-10 w-10 items-center justify-center rounded-full bg-cobalt text-sm font-bold text-white">
+              {user?.email ? getInitials(user.email) : "US"}
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{user?.email.split("@")[0]}</p>
+            <p className="truncate text-xs text-slate2">{user?.email}</p>
           </div>
-        </div>
-
-        {/* Logout Button */}
-        <div className="p-6 border-t border-gray-100">
-          <button
-            onClick={handleLogout}
-            className="group w-full flex items-center justify-center gap-2 rounded-xl border-2 border-red-200 text-red-600 py-3 text-sm font-semibold transition-all duration-200 hover:bg-red-50 hover:border-red-300"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Logout</span>
+          <button onClick={handleLogout} className="icon-btn" aria-label="Log out" title="Log out">
+            <FiLogOut aria-hidden />
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col bg-white/50 backdrop-blur-sm">
-        <Header
-          search={search}
-          onSearchChange={setSearch}
-          onRefresh={() => window.location.reload()}
-          onFilter={() => alert("Filter feature coming soon 🙂")}
-        />
-        <Tabs activeTab={activeTab} search={search} />
+      <main className="min-w-0 flex-1 overflow-auto p-4 sm:p-8">
+        <div className="mx-auto max-w-3xl space-y-5">
+          <h1 className="text-3xl font-extrabold">
+            {activeTab === "scheduled" ? "Scheduled" : "Sent"}
+          </h1>
+          <Header search={search} onSearchChange={setSearch} onRefresh={() => setRefreshKey((k) => k + 1)} />
+          <Tabs activeTab={activeTab} search={search} refreshKey={refreshKey} />
+        </div>
       </main>
     </div>
   );

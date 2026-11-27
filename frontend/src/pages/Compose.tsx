@@ -2,9 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiFetch, redirect } from "../lib/api";
 import AIModal from "../components/AIModal";
+import { FiArrowLeft, FiClock, FiPaperclip, FiSend, FiX, FiZap } from "react-icons/fi";
+import Spinner from "../components/ui/Spinner";
+import { useToast } from "../components/ui/toast-context";
+import { formatDateTime } from "../lib/time";
 
 export default function Compose() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [searchParams] = useSearchParams();
 
   const [to, setTo] = useState("");
@@ -20,6 +25,7 @@ export default function Compose() {
     avatar_url: string | null;
   } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isFlying, setIsFlying] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -34,9 +40,9 @@ export default function Compose() {
     loadProfile();
 
     if (searchParams.get("gmail") === "connected") {
-      alert("✅ Gmail connected successfully.");
+      toast("Gmail connected.");
     }
-  }, [searchParams]);
+  }, [searchParams, toast]);
 
   const selectPreset = (hoursFromNow: number) => {
     const date = new Date();
@@ -51,7 +57,7 @@ export default function Compose() {
 
   const handleSend = async () => {
     if (!to || !subject || !body) {
-      alert("Please fill all required fields");
+      toast("Add a recipient, subject and message.", "error");
       return;
     }
 
@@ -61,7 +67,7 @@ export default function Compose() {
       .filter(Boolean);
 
     if (recipients.length === 0) {
-      alert("Please add at least one recipient");
+      toast("Add at least one recipient.", "error");
       return;
     }
 
@@ -101,13 +107,15 @@ export default function Compose() {
             body: formData,
         });
 
-        alert(
+        toast(
             scheduledTime
-                ? "Emails scheduled successfully"
-                : "Emails sent successfully"
+                ? "Emails scheduled"
+                : "Emails queued to send"
         );
 
-        navigate("/dashboard");
+        // Let the plane take off before leaving the page.
+        setIsFlying(true);
+        setTimeout(() => navigate("/dashboard"), 1100);
     } catch (err: unknown) {
         setIsSending(false);
 
@@ -119,258 +127,163 @@ export default function Compose() {
           return;
         }
 
-        alert(
+        toast(
           err instanceof Error
             ? err.message
-            : "Failed to schedule emails"
+            : "Failed to schedule emails",
+          "error"
         );
       }
   };
 
-  const formatScheduledTime = () => {
-    if (!scheduledTime) return null;
-    const date = new Date(scheduledTime);
-    return date.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
+  const recipientList = to.split(",").map((e) => e.trim()).filter(Boolean);
+  const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/50">
-      <div className="flex flex-1 flex-col bg-white/80 backdrop-blur-sm">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200/80 bg-white/90 backdrop-blur-md px-8 py-5">
-          <div className="flex items-center gap-4">
-            <button
-              aria-label="go-back"
-              onClick={() => navigate(-1)}
-              className="flex items-center justify-center w-10 h-10 rounded-xl text-gray-600 hover:bg-gray-100 transition-all duration-200"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">New Message</h1>
-              <p className="text-sm text-gray-500">Compose and schedule your email</p>
-            </div>
-          </div>
+    <div className="min-h-screen pb-10">
+      <header className="sticky top-0 z-10 border-b border-line bg-white">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-3">
+          <button aria-label="Go back" onClick={() => navigate(-1)} className="icon-btn">
+            <FiArrowLeft size={20} aria-hidden />
+          </button>
+          <h1 className="mr-auto text-xl font-extrabold">New message</h1>
 
-          <div className="flex items-center gap-3">
-            {/* AI Email Generation */}
-            <button
-              onClick={() => setIsOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
-            >
-              Generate for JD
-            </button>
-            
-            {/* Schedule Button */}
-            <button
-              aria-label="showScheduler"
-              onClick={() => setShowScheduler((p) => !p)}
-              className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
-                showScheduler || scheduledTime
-                  ? "bg-emerald-100 text-emerald-600"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-
-            {/* Send Button */}
-            <button
-              onClick={handleSend}
-              disabled={isSending}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-2.5 font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isSending ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                  {scheduledTime ? "Schedule" : "Send"}
-                </>
-              )}
-            </button>
-          </div>
+          <button onClick={() => setIsOpen(true)} className="btn-sun group">
+            <FiZap aria-hidden className="transition group-hover:rotate-12 group-hover:scale-125" /> Generate for JD
+          </button>
+          <button
+            onClick={() => setShowScheduler((p) => !p)}
+            aria-expanded={showScheduler}
+            className="btn-ghost"
+          >
+            <FiClock aria-hidden /> Schedule
+          </button>
+          <button onClick={handleSend} disabled={isSending} className="btn-primary group">
+            {isSending ? (
+              <><Spinner /> Sending...</>
+            ) : (
+              <>
+                <FiSend aria-hidden className="transition group-hover:-translate-y-0.5 group-hover:translate-x-1" />
+                {scheduledTime ? "Schedule send" : "Send now"}
+              </>
+            )}
+          </button>
         </div>
+      </header>
 
-        {/* Scheduled Time Badge */}
-        {scheduledTime && !showScheduler && (
-          <div className="px-8 pt-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
-              <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium text-emerald-700">
-                Scheduled for {formatScheduledTime()}
-              </span>
-              <button
-                aria-label="cancelSchedule"
-                onClick={cancelSchedule}
-                className="ml-2 text-emerald-600 hover:text-emerald-800"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Form */}
-        <div className="flex flex-1 gap-8 p-8 overflow-hidden">
-          <div className="flex flex-1 flex-col gap-6 overflow-auto">
-            {/* From Field */}
-            <div className="flex items-center gap-4">
-              <label className="w-20 text-sm font-medium text-gray-600">From</label>
-              <input
-                type="email"
-                aria-label="email"
-                value={profile?.email ?? ""}
-                readOnly
-                className="flex-1 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 cursor-not-allowed"
-              />
-            </div>
-
-            {/* To Field */}
-            <div className="flex items-start gap-4">
-              <label className="w-20 text-sm font-medium text-gray-600 pt-2.5">To</label>
-              <div className="flex-1">
-                <input
-                  value={to}
-                  aria-label="multiple-emails"
-                  onChange={(e) => setTo(e.target.value)}
-                  placeholder="recipient@example.com, another@example.com"
-                  className="w-full rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                />
-                <p className="mt-1.5 text-xs text-gray-500">Separate multiple emails with commas</p>
+      <main className="mx-auto flex max-w-5xl flex-col-reverse items-start gap-5 px-4 pt-6 lg:flex-row">
+        <div className="card w-full min-w-0 flex-1 animate-rise">
+          <div className="airmail" />
+          <div className="space-y-4 p-5 sm:p-7">
+            {scheduledTime && (
+              <div className="flex w-fit animate-rise items-center gap-2 rounded-full bg-sky py-1 pl-4 pr-1 text-sm font-semibold text-cobalt">
+                <FiClock aria-hidden />
+                Leaves {formatDateTime(scheduledTime)}
+                <button aria-label="Cancel schedule" onClick={cancelSchedule} className="icon-btn h-8 w-8">
+                  <FiX aria-hidden />
+                </button>
               </div>
+            )}
+
+            <div>
+              <label htmlFor="from" className="label">From</label>
+              <input id="from" type="email" value={profile?.email ?? ""} readOnly className="field cursor-default bg-sky/50 text-slate2" />
             </div>
 
-            {/* Subject Field */}
-            <div className="flex items-center gap-4">
-              <label className="w-20 text-sm font-medium text-gray-600">Subject</label>
+            <div>
+              <label htmlFor="to" className="label">To</label>
               <input
-                value={subject}
-                aria-label="subject-body"
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Email subject"
-                className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                id="to"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                placeholder="recipient@example.com, another@example.com"
+                className="field"
               />
+              {recipientList.length > 0 ? (
+                <ul aria-label="Recipients" className="mt-2 flex flex-wrap gap-2">
+                  {recipientList.map((r, i) => (
+                    <li key={i} className="max-w-full animate-rise truncate rounded-full bg-sky px-3 py-1 text-xs font-semibold">{r}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1.5 text-xs text-slate2">Separate multiple emails with commas</p>
+              )}
             </div>
 
-            {/* Body Field */}
-            <div className="flex flex-1 flex-col gap-2 min-h-0">
-              <label className="text-sm font-medium text-gray-600">Message</label>
+            <div>
+              <label htmlFor="subject" className="label">Subject</label>
+              <input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject" className="field font-semibold" />
+            </div>
+
+            <div>
+              <label htmlFor="message" className="label">Message</label>
               <textarea
+                id="message"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                placeholder="Write your email message here..."
-                className="flex-1 resize-none rounded-xl border-2 border-gray-200 bg-white p-4 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                placeholder="Write your message, or generate one from a job description."
+                className="field min-h-[20rem] resize-y leading-relaxed"
               />
+              <p className="mt-1 text-right text-xs tabular-nums text-slate2">{wordCount} {wordCount === 1 ? "word" : "words"}</p>
             </div>
-          </div>
 
-          {/* Scheduler Panel */}
-          {showScheduler && (
-            <div className="w-80 shrink-0 animate-slideIn">
-              <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-xl">
-                <h3 className="mb-4 text-lg font-semibold text-gray-900">Schedule Send</h3>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pick date & time</label>
-                  <input
-                    aria-label="time"
-                    type="datetime-local"
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    onChange={(e) =>
-                      setScheduledTime(new Date(e.target.value).toISOString())
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Quick Options</p>
-                  <button
-                    onClick={() => selectPreset(1)}
-                    className="flex items-center justify-between w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-50 border border-gray-200"
-                  >
-                    <span>In 1 hour</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => selectPreset(10)}
-                    className="flex items-center justify-between w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-50 border border-gray-200"
-                  >
-                    <span>In 10 hours</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => selectPreset(24)}
-                    className="flex items-center justify-between w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-50 border border-gray-200"
-                  >
-                    <span>Tomorrow</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={cancelSchedule}
-                    className="flex-1 rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setShowScheduler(false)}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40"
-                  >
-                    Done
-                  </button>
-                </div>
+            {resumeFile && (
+              <div className="flex w-fit max-w-full animate-rise items-center gap-2 rounded-xl border border-dashed border-cobalt py-1 pl-4 pr-1 text-sm">
+                <FiPaperclip aria-hidden className="shrink-0 text-cobalt" />
+                <span className="truncate font-semibold">{resumeFile.name}</span>
+                <button aria-label="Remove attachment" onClick={() => setResumeFile(null)} className="icon-btn h-8 w-8">
+                  <FiX aria-hidden />
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes slideIn {
-          from { 
-            opacity: 0; 
-            transform: translateX(20px); 
-          }
-          to { 
-            opacity: 1; 
-            transform: translateX(0); 
-          }
-        }
-        
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-out;
-        }
-      `}</style>
+        {showScheduler && (
+          <aside className="card w-full animate-rise p-5 lg:sticky lg:top-24 lg:w-72">
+            <h2 className="text-lg font-bold">Schedule send</h2>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 lg:grid-cols-1">
+              {[
+                { label: "In 1 hour", hours: 1 },
+                { label: "In 10 hours", hours: 10 },
+                { label: "Tomorrow", hours: 24 },
+              ].map((preset) => (
+                <button key={preset.hours} onClick={() => selectPreset(preset.hours)} className="btn-ghost rounded-xl">
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            <label htmlFor="send-at" className="label mt-5">Or pick date and time</label>
+            <input
+              id="send-at"
+              type="datetime-local"
+              className="field"
+              onChange={(e) =>
+                setScheduledTime(e.target.value ? new Date(e.target.value).toISOString() : null)
+              }
+            />
+
+            <p aria-live="polite" className="mt-4 min-h-[1.25rem] text-sm font-semibold text-cobalt">
+              {scheduledTime && `Leaves ${formatDateTime(scheduledTime)}`}
+            </p>
+
+            <div className="mt-3 flex gap-2">
+              <button onClick={cancelSchedule} className="btn-ghost flex-1">Cancel</button>
+              <button onClick={() => setShowScheduler(false)} className="btn-primary flex-1">Done</button>
+            </div>
+          </aside>
+        )}
+      </main>
+
+      {isFlying && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center overflow-hidden">
+          <span className="flex h-24 w-24 animate-fly items-center justify-center rounded-3xl bg-sun text-ink shadow-2xl">
+            <FiSend size={44} />
+          </span>
+        </div>
+      )}
 
       {isOpen && (
         <AIModal
@@ -381,9 +294,10 @@ export default function Compose() {
               setSubject(email.subject);
               setBody(email.body);
               setResumeFile(email.resumeFile);
+              toast("Draft ready. Read it before you send.");
             }}
         />
-    )}
+      )}
     </div>
   );
 }

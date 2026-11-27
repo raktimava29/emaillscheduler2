@@ -5,6 +5,8 @@ import JobUpload from "./JobUpload";
 import LoadingScreen from "./LoadingScreen";
 import RoleSelector from "./RoleSelector";
 import { parseDocuments, buildContext, generateEmail } from "../lib/ai";
+import { FiX } from "react-icons/fi";
+import { useToast } from "./ui/toast-context";
 import type { ResumeParserResponse } from "../types/resume";
 import type { JobParserResponse } from "../types/job";
 
@@ -24,6 +26,7 @@ export default function AIModal({
     onClose,
     onGenerated
 }: AIModalProps) {
+    const toast = useToast();
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [jobFile, setJobFile] = useState<File | null>(null);
     const [jobText, setJobText] = useState("");
@@ -89,10 +92,11 @@ export default function AIModal({
         } catch (err) {
             console.error(err);
 
-            alert(
+            toast(
                 err instanceof Error
                     ? err.message
-                    : "Failed to build candidate context."
+                    : "Failed to build candidate context.",
+                "error"
             );
 
             setStep("ROLE_SELECTION");
@@ -132,10 +136,11 @@ export default function AIModal({
         } catch (err) {
             console.error(err);
 
-            alert(
+            toast(
                 err instanceof Error
                     ? err.message
-                    : "Failed to parse documents."
+                    : "Failed to parse documents.",
+                "error"
             );
 
             setStep("UPLOAD_JOB");
@@ -224,24 +229,41 @@ export default function AIModal({
             content = null;
     }
 
+    const progress =
+        step === "UPLOAD_RESUME" ? 0
+        : step === "UPLOAD_JOB" || step === "PARSING" ? 1
+        : step === "ROLE_SELECTION" ? 2
+        : 3;
+
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4"
             onClick={handleClose}
         >
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Generate an email from a job description"
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl"
+                className="flex max-h-full w-full max-w-2xl animate-rise flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
             >
-                <button
-                    onClick={handleClose}
-                    className="absolute right-5 top-5 rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
-                    aria-label="Close AI Assistant"
-                >
-                    ✕
-                </button>
+                <div className="airmail shrink-0" />
 
-                <div className="p-8">
+                <div className="flex items-center gap-4 px-6 pt-5 sm:px-8">
+                    <ol className="grid flex-1 grid-cols-4 gap-2">
+                        {["Resume", "Job", "Role", "Draft"].map((name, i) => (
+                            <li key={name} aria-current={i === progress ? "step" : undefined} className={`text-xs font-semibold ${i <= progress ? "text-cobalt" : "text-slate2"}`}>
+                                <span className={`mb-1.5 block h-1.5 rounded-full transition-colors duration-500 ${i <= progress ? "bg-cobalt" : "bg-sky"}`} />
+                                {name}
+                            </li>
+                        ))}
+                    </ol>
+                    <button onClick={handleClose} className="icon-btn" aria-label="Close AI Assistant">
+                        <FiX aria-hidden />
+                    </button>
+                </div>
+
+                <div className="overflow-auto p-6 sm:p-8">
                     {content}
                 </div>
             </div>
